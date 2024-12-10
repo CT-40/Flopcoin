@@ -1,0 +1,33 @@
+# /etc/conf.d/flopcoind: config file for /etc/init.d/flopcoind
+
+# Config file location
+#FLOPCOIND_CONFIGFILE="/etc/flopcoin/flopcoin.conf"
+
+# What directory to write pidfile to?  (created and owned by $FLOPCOIND_USER)
+#FLOPCOIND_PIDDIR="/var/run/flopcoind"
+
+# What filename to give the pidfile
+#FLOPCOIND_PIDFILE="${FLOPCOIND_PIDDIR}/flopcoind.pid"
+
+# Where to write flopcoind data (be mindful that the blockchain is large)
+#FLOPCOIND_DATADIR="/var/lib/flopcoind"
+
+# User and group to own flopcoind process
+#FLOPCOIND_USER="flopcoin"
+#FLOPCOIND_GROUP="flopcoin"
+
+# Path to flopcoind executable
+#FLOPCOIND_BIN="/usr/bin/flopcoind"
+
+# Nice value to run flopcoind under
+#FLOPCOIND_NICE=0
+
+# Additional options (avoid -conf and -datadir, use flags above)
+FLOPCOIND_OPTS="-disablewallet"
+
+# The timeout in seconds OpenRC will wait for flopcoind to terminate
+# after a SIGTERM has been raised.
+# Note that this will be mapped as argument to start-stop-daemon's
+# '--retry' option, which means you can specify a retry schedule
+# here. For more information see man 8 start-stop-daemon.
+FLOPCOIND_SIGTERM_TIMEOUT=60

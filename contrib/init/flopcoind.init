@@ -1,0 +1,67 @@
+#!/bin/bash
+#
+#  flopcoind The flopcoin core server.
+#
+#
+# chkconfig: 345 80 20
+# description: flopcoind
+# processname: flopcoind
+#
+
+# Source function library.
+. /etc/init.d/functions
+
+# you can override defaults in /etc/sysconfig/flopcoind, see below
+if [ -f /etc/sysconfig/flopcoind ]; then
+        . /etc/sysconfig/flopcoind
+fi
+
+RETVAL=0
+
+prog=flopcoind
+# you can override the lockfile via FLOPCOIND_LOCKFILE in /etc/sysconfig/flopcoind
+lockfile=${FLOPCOIND_LOCKFILE-/var/lock/subsys/flopcoind}
+
+# flopcoind defaults to /usr/bin/flopcoind, override with FLOPCOIND_BIN
+flopcoind=${FLOPCOIND_BIN-/usr/bin/flopcoind}
+
+# flopcoind opts default to -disablewallet, override with FLOPCOIND_OPTS
+flopcoind_opts=${FLOPCOIND_OPTS--disablewallet}
+
+start() {
+    echo -n $"Starting $prog: "
+    daemon $DAEMONOPTS $flopcoind $flopcoind_opts
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && touch $lockfile
+    return $RETVAL
+}
+
+stop() {
+    echo -n $"Stopping $prog: "
+    killproc $prog
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && rm -f $lockfile
+    return $RETVAL
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status $prog
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: service $prog {start|stop|status|restart}"
+        exit 1
+        ;;
+esac
