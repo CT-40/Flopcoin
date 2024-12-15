@@ -1,23 +1,21 @@
-# Flopcoin Core [FLOP, Ð]
+# Flopcoin Core [FLOP, F]
 ==========================
 
-#![Flopcoin](http://static.tumblr.com/ppdj5y9/Ae9mxmxtp/300coin.png)
+<img src="https://i.imgur.com/h0hD7dD.png" width="300">
 
-[![Build Status](https://travis-ci.org/flopcoin/flopcoin.svg?branch=1.14-dev)](https://travis-ci.org/flopcoin/flopcoin) [![tip for next commit](https://tip4commit.com/projects/702.svg)](https://tip4commit.com/github/flopcoin/flopcoin)
-
-## What is Flopcoin? – Such coin
+## What is Flopcoin?
 Flopcoin is a cryptocurrency like Bitcoin, although it does not use SHA256 as its proof of work (POW). Taking development cues from Tenebrix and Litecoin, Flopcoin currently employs a simplified variant of scrypt.
 
-http://flopcoin.com/
+http://flopcoin.net/
 
-## License – Much license
+## License
 Flopcoin Core is released under the terms of the MIT license. See [COPYING](COPYING) for more
 information or see https://opensource.org/licenses/MIT.
 
-## Development and contributions – omg developers
+## Development and Contributions
 Development is ongoing, and the development team, as well as other volunteers, can freely work in their own trees and submit pull requests when features or bug fixes are ready.
 
-#### Version strategy
+#### Version Strategy
 Version numbers are following ```major.minor.patch``` semantics.
 
 #### Branches
@@ -45,9 +43,9 @@ code. This is especially important for large or high-risk changes. It is useful
 to add a test plan to the pull request description if testing the changes is
 not straightforward.
 
-## Very Much Frequently Asked Questions
+## Frequently Asked Questions
 
-### How much flop can exist? – So many puppies!
+### How much flop can exist?
 Early 2015 (approximately a year and a half after release) there will be approximately 100,000,000,000 coins.
 Each subsequent block will grant 10,000 coins to encourage miners to continue to secure the network and make up for lost wallets on hard drives/phones/lost encryption passwords/etc.
 
