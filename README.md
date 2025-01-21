@@ -1,137 +1,170 @@
-# Flopcoin Core [FLOP, F]
-==========================
+<h1 align="center">
+<img src="https://i.imgur.com/h0hD7dD.png" alt="Flopcoin" width="300"/>
+<br/><br/>
+Flopcoin Core [FLOP, F]
+</h1>
+Flopcoin is a layer 1, no-premine, decentralized cryptocurrency that launched on December 9th, 2024. It was forked from Dogecoin and is secured with proof-of-work mining using the scrypt algorithm. his means there are no liquidity pools to drain, no blacklisting wallets, and no confusing smart contracts. Flopcoin is a simple blockchain for the people, by the people.
+<br/><br/>
+The name "Flopcoin" is an homage to the "Floptropica" meme community and thus is considered a memecoin. Beyond being just a store of value or a digital currency, we hope to integrate Flopcoin into a tipping platform that spans across all social media services to allow rewarding your favorite content creators.
+<br/><br/>
+The Flopcoin Core software allows anyone to operate a node in the Flopcoin blockchain network and use the Scrypt hashing method for Proof of Work. It is adapted from Dogecoin Core, Bitcoin Core, and other cryptocurrencies.
+<br/><br/>
+For information about the default fees used on the Flopcoin network, please
+refer to the [fee recommendation](doc/fee-recommendation.md).
+<br/><br/>
 
-<img src="https://i.imgur.com/h0hD7dD.png" width="300">
+**Website:** [http://flopcoin.net/](http://flopcoin.net/)
 
-## What is Flopcoin?
-Flopcoin is a cryptocurrency like Bitcoin, although it does not use SHA256 as its proof of work (POW). Taking development cues from Tenebrix and Litecoin, Flopcoin currently employs a simplified variant of scrypt.
+## Dogecoin Differences
 
-http://flopcoin.net/
+Flopcoin is a fork of Dogecoin. For the sake of familiarity, we will attempt to keep Flopcoin similar to Dogecoin.
 
-## License
-Flopcoin Core is released under the terms of the MIT license. See [COPYING](COPYING) for more
-information or see https://opensource.org/licenses/MIT.
+Changes:
 
-## Development and Contributions
-Development is ongoing, and the development team, as well as other volunteers, can freely work in their own trees and submit pull requests when features or bug fixes are ready.
+* Addresses start with `F` instead of `D`
+* GUI themed for Flopcoin
 
-#### Version Strategy
+* Coin Name    : Flopcoin
+* Coin ticker  : FLOP
+* Algorithm    : Scrypt
+* Block Time   : 60 seconds
+* Explorer 1   : https://explorer.flopcoin.net
+* github       : https://github.com/Flopcoin/Flopcoin
+* Wallet       : https://github.com/Flopcoin/Flopcoin/releases
+
+
+## Usage 💻
+
+To start your journey with Flopcoin Core, see the [installation guide](INSTALL.md) and the [getting started](doc/getting-started.md) tutorial.
+
+The JSON-RPC API provided by Flopcoin Core is self-documenting and can be browsed with `flopcoin-cli help`, while detailed information for each command can be viewed with `flopcoin-cli help <command>`. Alternatively, see the [Bitcoin Core documentation](https://developer.bitcoin.org/reference/rpc/) - which implement a similar protocol - to get a browsable version.
+
+
+
+<font face="Verdana"><b>### Block Rewards Distribution</b></font><br>
+&nbsp;</p>
+<table border="1" width="46%">
+	<tr>
+		<td width="230"><b>Starting Block</b></td>
+		<td width="270"><b>End Block</b></td>
+		<td><b>Rewards</b></td>
+	</tr>
+	<tr>
+		<td width="230">1</td>
+		<td width="270">99,999</td>
+		<td>500,000</td>
+	</tr>
+	<tr>
+		<td width="230">100,000</td>
+		<td width="270">199,999</td>
+		<td>250,000</td>
+	</tr>
+	<tr>
+		<td width="230">200,000</td>
+		<td width="270">299,999</td>
+		<td>125,000</td>
+	</tr>
+	<tr>
+		<td width="230">300,000</td>
+		<td width="270">399,999</td>
+		<td>62,500</td>
+	</tr>
+	<tr>
+		<td width="230">400,000</td>
+		<td width="270">499,999</td>
+		<td>31,250</td>
+	</tr>
+	<tr>
+		<td width="230">500,000</td>
+		<td width="270">599,999</td>
+		<td>15,625</td>
+	</tr>
+	<tr>
+		<td width="230">600,000</td>
+		<td width="270">unlimited supply</td>
+		<td>10,000</td>
+	</tr>
+</table>
+
+
+### Ports
+
+Flopcoin Core by default uses port `14327` for peer-to-peer communication that
+is needed to synchronize the "mainnet" blockchain and stay informed of new
+transactions and blocks. Additionally, a JSONRPC port can be opened, which
+defaults to port `15612` for mainnet nodes. It is strongly recommended to not
+expose RPC ports to the public internet.
+
+| Function | mainnet | testnet | regtest |
+| :------- | ------: | ------: | ------: |
+| P2P      |   14327 |   44874 |   18444 |
+| RPC      |   15612 |   44873 |   18332 |
+
+## Ongoing development 💻
+
+Flopcoin Core is an open source and community driven software. The development
+process is open and publicly visible; anyone can see, discuss and work on the
+software.
+
+Main development resources:
+
+* [GitHub Projects](https://github.com/Flopcoin/Flopcoin/projects) is used to
+  follow planned and in-progress work for upcoming releases.
+* [GitHub Discussion](https://github.com/Flopcoin/Flopcoin/discussions) is used
+  to discuss features, planned and unplanned, related to both the development of
+  the Flopcon Core software, the underlying protocols and the FLOP asset.
+
+
+### Version strategy
 Version numbers are following ```major.minor.patch``` semantics.
 
-#### Branches
+### Branches
 There are 3 types of branches in this repository:
 
 - **master:** Stable, contains the latest version of the latest *major.minor* release.
 - **maintenance:** Stable, contains the latest version of previous releases, which are still under active maintenance. Format: ```<version>-maint```
 - **development:** Unstable, contains new code for planned releases. Format: ```<version>-dev```
 
-*Master and maintenance branches are exclusively mutable by release. Planned releases will always have a development branch and pull requests should be submitted against those. Maintenance branches are there for* ***bug fixes only,*** *please submit new features against the development branch with the highest version.*
+*Master and maintenance branches are exclusively mutable by release. Planned*
+*releases will always have a development branch and pull requests should be*
+*submitted against those. Maintenance branches are there for **bug fixes only,***
+*please submit new features against the development branch with the highest version.*
 
-#### Contributions
+## Contributing 🤝
 
-Developers are strongly encouraged to write [unit tests](src/test/README.md) for new code, and to
-submit new unit tests for old code. Unit tests can be compiled and run
-(assuming they weren't disabled in configure) with: `make check`. Further details on running
-and extending unit tests can be found in [/src/test/README.md](/src/test/README.md).
+If you find a bug or experience issues with this software, please report it
+using the [issue system](https://github.com/Flopcoin/Flopcoin/issues).
 
-There are also [regression and integration tests](/qa) of the RPC interface, written
-in Python, that are run automatically on the build server.
-These tests can be run (if the [test dependencies](/qa) are installed) with: `qa/pull-tester/rpc-tests.py`
+Please see [the contribution guide](CONTRIBUTING.md) to see how you can
+participate in the development of Flopcoin Core. There are often
+[topics seeking help](https://github.com/Flopcoin/Flopcoin/labels/help%20wanted)
+where your contributions will have high impact and get very appreciation.
 
-Changes should be tested by somebody other than the developer who wrote the
-code. This is especially important for large or high-risk changes. It is useful
-to add a test plan to the pull request description if testing the changes is
-not straightforward.
+## Communities 🐸
 
-## Frequently Asked Questions
+You can join the communities on different social media.
+To see what's going on, meet people & discuss, find the latest meme, learn
+about Flopcoin, give or ask for help, to share your project.
 
-### How much flop can exist?
-Early 2015 (approximately a year and a half after release) there will be approximately 100,000,000,000 coins.
-Each subsequent block will grant 10,000 coins to encourage miners to continue to secure the network and make up for lost wallets on hard drives/phones/lost encryption passwords/etc.
+Here are some places to visit:
 
-### How to get flop? – To the moon!
-Flopcoin uses a simplified variant of the scrypt key derivation function as its proof of work with a target time of one minute per block and difficulty readjustment after every block. The block rewards are fixed and halve every 100,000 blocks. Starting with the 600,000th block, a permanent reward of 10,000 Flopcoin per block will be paid. 
 
-Originally, a different payout scheme was envisioned with block rewards being determined by taking the maximum reward as per the block schedule and applying the result of a Mersenne Twister pseudo-random number generator to arrive at a number between 0 and the maximum reward. This was changed, starting with block 145,000, to prevent large pools from gaming the system and mining only high reward blocks. At the same time, the difficulty retargeting was also changed from four hours to once per block (every minute), implementing an algorithm courtesy of the DigiByte Coin development team, to lessen the impact of sudden increases and decreases of network hashing rate.
+* [Discord](https://discord.gg/8qJqXQaczJ)
+* [Website](http://flopcoin.net/)
+* [X](https://x.com/flopcoin_dev)
 
-The current block reward schedule:
+## Future Plan
 
-1–99,999: 0–1,000,000 Flopcoin
+- Securing the network with more mining pools
+- Getting Flopcoin listed on popular exchanges
+- Implementing a content creator tipping platform using Flopcoin as payment.
+- Anything the community is interested in!
 
-100,000–144,999: 0–500,000 Flopcoin
+## Frequently Asked Questions ❓
 
-145,000–199,999: 250,000 Flopcoin
+Do you have a question regarding Flopcoin? An answer is perhaps already in the [FAQ](doc/FAQ.md) or the [Q&A section](https://github.com/Flopcoin/Flopcoin/discussions/categories/q-a) of the discussion board!
 
-200,000–299,999: 125,000 Flopcoin
-
-300,000–399,999: 62,500 Flopcoin
-
-400,000–499,999: 31,250 Flopcoin
-
-500,000–599,999: 15,625 Flopcoin
-
-600,000+: 10,000 Flopcoin
-
-The original block reward schedule, with one-minute block targets and four-hour difficulty readjustment:
-
-1–99,999: 0–1,000,000 Flopcoin
-
-100,000–199,999: 0–500,000 Flopcoin
-
-200,000–299,999: 0–250,000 Flopcoin
-
-300,000–399,999: 0–125,000 Flopcoin
-
-400,000–499,999: 0–62,500 Flopcoin
-
-500,000–599,999: 0–31,250 Flopcoin
-
-600,000+: 10,000 Flopcoin
-
-### Overview plz make flopcoind/flopcoin-cli/flopcoin-qt
-
-  The following are developer notes on how to build Flopcoin on your native platform. They are not complete guides, but include notes on the necessary libraries, compile flags, etc.
-
-  - [OSX Build Notes](doc/build-osx.md)
-  - [Unix Build Notes](doc/build-unix.md)
-  - [Windows Build Notes](doc/build-msw.md)
-
-### Such ports
-RPC 32551
-P2P 32552
-
-![](http://flopsay.com/wow//////such/coin)
-
-## Development tips and tricks
-
-**compiling for debugging**
-
-Run configure with the --enable-debug option, then make. Or run configure with
-CXXFLAGS="-g -ggdb -O0" or whatever debug flags you need.
-
-**debug.log**
-
-If the code is behaving strangely, take a look in the debug.log file in the data directory;
-error and debugging messages are written there.
-
-The -debug=... command-line option controls debugging; running with just -debug will turn
-on all categories (and give you a very large debug.log file).
-
-The Qt code routes qDebug() output to debug.log under category "qt": run with -debug=qt
-to see it.
-
-**testnet and regtest modes**
-
-Run with the -testnet option to run with "play flopcoins" on the test network, if you
-are testing multi-machine code that needs to operate across the internet.
-
-If you are testing something that can run on one machine, run with the -regtest option.
-In regression test mode, blocks can be created on-demand; see qa/rpc-tests/ for tests
-that run in -regtest mode.
-
-**DEBUG_LOCKORDER**
-
-Flopcoin Core is a multithreaded application, and deadlocks or other multithreading bugs
-can be very difficult to track down. Compiling with -DDEBUG_LOCKORDER (configure
-CXXFLAGS="-DDEBUG_LOCKORDER -g") inserts run-time checks to keep track of which locks
-are held, and adds warnings to the debug.log file if inconsistencies are detected.
+## License ⚖️
+Flopcoin Core is released under the terms of the MIT license. See
+[COPYING](COPYING) for more information or see
+[opensource.org](https://opensource.org/licenses/MIT)
