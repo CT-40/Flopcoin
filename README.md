@@ -28,6 +28,7 @@ Changes:
 * Coin ticker  : FLOP
 * Algorithm    : Scrypt
 * Block Time   : 60 seconds
+* Default Port : 32552
 * Explorer 1   : https://explorer.flopcoin.net
 * github       : https://github.com/Flopcoin/Flopcoin
 * Wallet       : https://github.com/Flopcoin/Flopcoin/releases
