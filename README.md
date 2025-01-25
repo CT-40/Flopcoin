@@ -85,6 +85,16 @@ The JSON-RPC API provided by Flopcoin Core is self-documenting and can be browse
 	</tr>
 </table>
 
+<font face="Verdana"><b>Running a Full Node</b></font>
+
+Running a full node helps contribute to the Flopcoin network's security and decentralization by relaying data to other nodes and verifying transactions. If you would like to run a full node, simply download the Flopcoin Core wallet, let the blockchain fully sync, and ensure your network has port 32552 forwarded to allow incoming connections. 
+&nbsp;</p>
+<table border="1" width="46%">
+	<tr>
+		<td width="230"><b>Default Port</b></td>
+		<td width="270">32552</td>
+	</tr>
+</table>
 
 ## Ongoing development 💻
 
