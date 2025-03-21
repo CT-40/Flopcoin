@@ -1472,6 +1472,19 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         pfrom->SetSendVersion(nSendVersion);
         pfrom->nVersion = nVersion;
 
+        ////////// Compatibility Checks START //////////
+	int currentHeight = chainActive.Height();
+	int64_t currentTime = GetTime();
+	if (currentHeight >= Params().GetConsensus(currentHeight).V3ForkHeight) {
+	    std::string localSubVer = strSubVersion;
+	    if (pfrom->cleanSubVer != localSubVer) {
+    		LogPrintf("DEBUG: Peer %d has unsupported SubVer '%s'; disconnecting.\n", pfrom->GetId(), pfrom->cleanSubVer);
+    		pfrom->fDisconnect = true;
+    		return false;
+	    }
+        }
+        ////////// Compatibility Checks END //////////
+
         if((nServices & NODE_WITNESS))
         {
             LOCK(cs_main);
