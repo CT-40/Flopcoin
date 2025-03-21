@@ -26,9 +26,9 @@ Build-Depends: debhelper,
  python,
  libzmq3-dev
 Standards-Version: 3.9.2
-Homepage: http://www.flopcoin.com/
-Vcs-Git: git://github.com/flopcoin/flopcoin.git
-Vcs-Browser: http://github.com/flopcoin/flopcoin
+Homepage: http://www.flopcoin.net/
+Vcs-Git: git://github.com/Flopcoin/Flopcoin.git
+Vcs-Browser: http://github.com/Flopcoin/Flopcoin
 
 Package: flopcoind
 Architecture: any

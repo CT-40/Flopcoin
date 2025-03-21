@@ -31,7 +31,7 @@ public:
     CAmount value(bool *value=0) const;
     void setValue(const CAmount& value);
 
-    /** Set single step in florinss **/
+    /** Set single step in florins **/
     void setSingleStep(const CAmount& step);
 
     /** Make read-only **/

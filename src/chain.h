@@ -1,5 +1,6 @@
-// Copyright (c) 2009-2010 Florins Nakamoto
+// Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
+// Copyright (c) 2021-2022 The Dogecoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -263,7 +264,7 @@ public:
         return ret;
     }
 
-    CBlockHeader GetBlockHeader(const Consensus::Params& consensusParams) const;
+    CBlockHeader GetBlockHeader(const Consensus::Params& consensusParams, bool fCheckPOW = true) const;
 
     uint256 GetBlockHash() const
     {

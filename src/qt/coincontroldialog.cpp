@@ -1,4 +1,5 @@
 // Copyright (c) 2011-2016 The Bitcoin Core developers
+// Copyright (c) 2022 The Dogecoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -433,7 +434,7 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
         {
             CTxOut txout(amount, (CScript)std::vector<unsigned char>(24, 0));
             txDummy.vout.push_back(txout);
-            if (txout.IsDust(dustRelayFee))
+            if (txout.IsDust(CWallet::discardThreshold))
                fDust = true;
         }
     }
@@ -509,7 +510,7 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
         if (fWitness)
         {
             // there is some fudging in these numbers related to the actual virtual transaction size calculation that will keep this estimate from being exact.
-            // usually, the result will be an overestimate within a couple of florinss so that the confirmation dialog ends up displaying a slightly smaller fee.
+            // usually, the result will be an overestimate within a couple of florins so that the confirmation dialog ends up displaying a slightly smaller fee.
             // also, the witness stack size value value is a variable sized integer. usually, the number of stack items will be well under the single byte var int limit.
             nBytes += 2; // account for the serialized marker and flag bytes
             nBytes += nQuantity; // account for the witness byte that holds the number of stack items for each input.
@@ -543,13 +544,13 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
                 nChange -= nPayFee;
 
             // Never create dust outputs; if we would, just add the dust to the fee.
-            if (nChange > 0 && nChange < MIN_CHANGE)
+            if (nChange > 0 && nChange < CWallet::GetMinChange())
             {
                 CTxOut txout(nChange, (CScript)std::vector<unsigned char>(24, 0));
-                if (txout.IsDust(dustRelayFee))
+                if (txout.IsDust(CWallet::discardThreshold))
                 {
                     if (CoinControlDialog::fSubtractFeeFromAmount) // dust-change will be raised until no dust
-                        nChange = txout.GetDustThreshold(dustRelayFee);
+                        nChange = CWallet::discardThreshold;
                     else
                     {
                         nPayFee += nChange;
@@ -607,14 +608,14 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
     // tool tips
     QString toolTipDust = tr("This label turns red if any recipient receives an amount smaller than the current dust threshold.");
 
-    // how many florinss the estimated fee can vary per byte we guess wrong
+    // how many florins the estimated fee can vary per byte we guess wrong
     double dFeeVary;
     if (payTxFee.GetFeePerK() > 0)
         dFeeVary = (double)std::max(CWallet::GetRequiredFee(1000), payTxFee.GetFeePerK()) / 1000;
     else {
         dFeeVary = (double)std::max(CWallet::GetRequiredFee(1000), mempool.estimateSmartFee(nTxConfirmTarget).GetFeePerK()) / 1000;
     }
-    QString toolTip4 = tr("Can vary +/- %1 koinu(s) per input.").arg(dFeeVary);
+    QString toolTip4 = tr("Can vary +/- %1 koinu per input.").arg(dFeeVary);
 
     l3->setToolTip(toolTip4);
     l4->setToolTip(toolTip4);

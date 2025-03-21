@@ -1,5 +1,6 @@
-// Copyright (c) 2010 Florins Nakamoto
+// Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
+// Copyright (c) 2021-2022 The Dogecoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -21,7 +22,7 @@ using namespace std;
  * JSON-RPC protocol.  Bitcoin speaks version 1.0 for maximum compatibility,
  * but uses JSON-RPC 1.1/2.0 standards for parts of the 1.0 standard that were
  * unspecified (HTTP errors and contents of 'error').
- * 
+ *
  * 1.0 spec: http://json-rpc.org/wiki/specification
  * 1.2 spec: http://jsonrpc.org/historical/json-rpc-over-http.html
  */
@@ -29,9 +30,9 @@ using namespace std;
 UniValue JSONRPCRequestObj(const string& strMethod, const UniValue& params, const UniValue& id)
 {
     UniValue request(UniValue::VOBJ);
-    request.push_back(Pair("method", strMethod));
-    request.push_back(Pair("params", params));
-    request.push_back(Pair("id", id));
+    request.pushKV("method", strMethod);
+    request.pushKV("params", params);
+    request.pushKV("id", id);
     return request;
 }
 
@@ -39,11 +40,11 @@ UniValue JSONRPCReplyObj(const UniValue& result, const UniValue& error, const Un
 {
     UniValue reply(UniValue::VOBJ);
     if (!error.isNull())
-        reply.push_back(Pair("result", NullUniValue));
+        reply.pushKV("result", NullUniValue);
     else
-        reply.push_back(Pair("result", result));
-    reply.push_back(Pair("error", error));
-    reply.push_back(Pair("id", id));
+        reply.pushKV("result", result);
+    reply.pushKV("error", error);
+    reply.pushKV("id", id);
     return reply;
 }
 
@@ -56,8 +57,8 @@ string JSONRPCReply(const UniValue& result, const UniValue& error, const UniValu
 UniValue JSONRPCError(int code, const string& message)
 {
     UniValue error(UniValue::VOBJ);
-    error.push_back(Pair("code", code));
-    error.push_back(Pair("message", message));
+    error.pushKV("code", code);
+    error.pushKV("message", message);
     return error;
 }
 
@@ -71,7 +72,7 @@ static const std::string COOKIEAUTH_FILE = ".cookie";
 boost::filesystem::path GetAuthCookieFile()
 {
     boost::filesystem::path path(GetArg("-rpccookiefile", COOKIEAUTH_FILE));
-    if (!path.is_complete()) path = GetDataDir() / path;
+    if (!path.is_absolute()) path = GetDataDir() / path;
     return path;
 }
 
@@ -125,4 +126,3 @@ void DeleteAuthCookie()
         LogPrintf("%s: Unable to remove random auth cookie file: %s\n", __func__, e.what());
     }
 }
-

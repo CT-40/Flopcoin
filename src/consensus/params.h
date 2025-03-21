@@ -1,5 +1,6 @@
-// Copyright (c) 2009-2010 Florins Nakamoto
+// Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
+// Copyright (c) 2021-2022 The Dogecoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -47,7 +48,7 @@ struct Params {
     int BIP34Height;
     uint256 BIP34Hash;
     /** Block height at which BIP65 becomes active */
-    // int BIP65Height;
+    int BIP65Height;
     /** Block height at which BIP66 becomes active */
     int BIP66Height;
     /**

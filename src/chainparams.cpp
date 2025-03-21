@@ -1,5 +1,6 @@
-// Copyright (c) 2010 Florins Nakamoto
+// Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
+// Copyright (c) 2022-2024 The Dogecoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -81,9 +82,9 @@ public:
         consensus.nMajorityWindow = 2000;
         // BIP34 is never enforced in Flopcoin v2 blocks, so we enforce from v3
         consensus.BIP34Height = 100;
-        consensus.BIP34Hash = uint256();
-        // consensus.BIP65Height = 1032483; // Not enabled in Doge yet
-        consensus.BIP66Height = 101; // 80d1364201e5df97e696c03bdd24dc885e8617b9de51e453c10a4f629b1e797a - this is the last block that could be v2, 1900 blocks past the last v2 block
+        consensus.BIP34Hash = uint256S("0x67cf3c48ee2ff1db2598e59b8841c85c3e080758bd5a105158bccf4d268c0ab5");
+        consensus.BIP65Height = 110000;
+        consensus.BIP66Height = 101;
         consensus.powLimit = uint256S("0x00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 20;
         consensus.nPowTargetTimespan = 1 * 60 * 60; // pre-digishield: 1 hours
         consensus.nPowTargetSpacing = 60; // 1 minute
@@ -110,10 +111,10 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 0; // Disabled
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x00");
+        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000001e4e544b7e8f4925");
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0x1f1037762db00882d3353b8d9dcfd52fc93cbc2d694c62f1ecd6a209cf9d30d0"); // 2,510,150
+        consensus.defaultAssumeValid = uint256S("0x3ad96e04f2ea0672d941448af6eb0b48621a8a966566d20b12425b6f6f34931b");
 
         // AuxPoW parameters
         consensus.nAuxpowChainId = 0x00A3; // 163 !
@@ -121,7 +122,7 @@ public:
         consensus.fAllowLegacyBlocks = true;
         consensus.nHeightEffective = 0;
 
-        // Blocks 145 - 371336 are Digishield without AuxPoW
+        // Blocks 145 - 109999 are Digishield without AuxPoW
         digishieldConsensus = consensus;
         digishieldConsensus.nHeightEffective = 145;
         digishieldConsensus.fSimplifiedRewards = true;
@@ -139,7 +140,7 @@ public:
         digishieldConsensus.pLeft = &consensus;
         digishieldConsensus.pRight = &auxpowConsensus;
 
-        /** 
+        /**
          * The message start string is designed to be unlikely to occur in normal data.
          * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
          * a large 32-bit integer with any alignment.
@@ -148,7 +149,6 @@ public:
         pchMessageStart[1] = 0xc0;
         pchMessageStart[2] = 0xc0;
         pchMessageStart[3] = 0xc0;
-        vAlertPubKey = ParseHex("04d4da7a5dae4db797d9b0644d57a5cd50e05a70f36091cd62e2fc41c98ded06340be5a43a35e185690cd9cde5d72da8f6d065b499b06f51dcfba14aad859f443a");
         nDefaultPort = 32552;
         nPruneAfterHeight = 100000;
 
@@ -170,9 +170,7 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = boost::assign::list_of(0x02)(0xfa)(0xca)(0xfd).convert_to_container<std::vector<unsigned char> >();
         base58Prefixes[EXT_SECRET_KEY] = boost::assign::list_of(0x02)(0xfa)(0xc3)(0x98).convert_to_container<std::vector<unsigned char> >();
 
-        //TODO: fix this for flopcoin -- plddr
-        //vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + ARRAYLEN(pnSeed6_main));
-        vFixedSeeds.clear();
+        vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + ARRAYLEN(pnSeed6_main));
 
         fMiningRequiresPeers = true;
         fDefaultConsistencyChecks = false;
@@ -185,7 +183,7 @@ public:
         };
 
         chainTxData = ChainTxData{
-            // Data as of block 77e3f4a4bcb4a2c15e8015525e3d15b466f6c022f6ca82698f329edef7d9777e (height 2510150).
+            // Data as of block 1f1037762db00882d3353b8d9dcfd52fc93cbc2d694c62f1ecd6a209cf9d30d0 (height 0).
             // Tx estimate based on average of year 2018 (~27k transactions per day)
             1733419383, // * UNIX timestamp of last checkpoint block
             0,   // * total number of transactions between genesis and last checkpoint
@@ -220,9 +218,9 @@ public:
         consensus.nMajorityRejectBlockOutdated = 750;
         consensus.nMajorityWindow = 1000;
         // BIP34 is never enforced in Flopcoin v2 blocks, so we enforce from v3
-        consensus.BIP34Height = 708658;
+        consensus.BIP34Height = 0;
         consensus.BIP34Hash = uint256(); //uint2565(0x00)
-        // consensus.BIP65Height = 581885; // 00000000007f6655f22f98e72ed80d8b06dc761d5da09df0fa1dc4be4f861eb6
+        consensus.BIP65Height = 0;
         consensus.BIP66Height = 708658; // 21b8b97dcdb94caa67c7f8f6dbf22e61e0cfe0e46e1fff3528b22864659e9b38 - this is the last block that could be v2, 1900 blocks past the last v2 block
         consensus.powLimit = uint256S("0x00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 20;
         consensus.nPowTargetTimespan = 1 * 60 * 60; // pre-digishield: 4 hours
@@ -249,7 +247,7 @@ public:
         consensus.nMinimumChainWork = uint256S("0x00");
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0xf4a99d0171235dab2cc2efb14055b86f96c9eda1653ff0a3b2153146391fe300"); // 900,000
+        consensus.defaultAssumeValid = uint256S("0xbb0a78264637406b6360aad926284d544d7049f45189db5664f3c4d07350559e");
 
         // AuxPoW parameters
         consensus.nAuxpowChainId = 0x0062; // 98 - Josh Wise!
@@ -288,7 +286,6 @@ public:
         pchMessageStart[1] = 0xc1;
         pchMessageStart[2] = 0xb7;
         pchMessageStart[3] = 0xdc;
-        vAlertPubKey = ParseHex("042756726da3c7ef515d89212ee1705023d14be389e25fe15611585661b9a20021908b2b80a3c7200a0139dd2b26946606aab0eef9aa7689a6dc2c7eee237fa834");
         nDefaultPort = 44556;
         nPruneAfterHeight = 1000;
 
@@ -300,7 +297,6 @@ public:
         assert(consensus.hashGenesisBlock == uint256S("0xf4a99d0171235dab2cc2efb14055b86f96c9eda1653ff0a3b2153146391fe300"));
         assert(genesis.hashMerkleRoot == uint256S("0xd646459741e2708a78a3c00f7d42790509ef11c8448930b478bbcf6b6ee25961"));
 
-        vFixedSeeds.clear();
         vSeeds.clear();
         // nodes with support for servicebits filtering should be at the top
         vSeeds.push_back(CDNSSeedData("test-node.flopcoin.net", "test-seed.flopcoin.net"));
@@ -311,8 +307,7 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = boost::assign::list_of(0x04)(0x35)(0x87)(0xcf).convert_to_container<std::vector<unsigned char> >();
         base58Prefixes[EXT_SECRET_KEY] = boost::assign::list_of(0x04)(0x35)(0x83)(0x94).convert_to_container<std::vector<unsigned char> >();
 
-        //TODO: fix this for flopcoin -- plddr
-        //vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_test, pnSeed6_test + ARRAYLEN(pnSeed6_test));
+        vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_test, pnSeed6_test + ARRAYLEN(pnSeed6_test));
 
         fMiningRequiresPeers = true;
         fDefaultConsistencyChecks = false;
@@ -349,10 +344,10 @@ public:
         consensus.nMajorityEnforceBlockUpgrade = 750;
         consensus.nMajorityRejectBlockOutdated = 950;
         consensus.nMajorityWindow = 1000;
-        consensus.BIP34Height = 10; // BIP34 has not activated on regtest (far in the future so block v1 are not rejected in tests)
+        consensus.BIP34Height = 0; // BIP34 has not activated on regtest (far in the future so block v1 are not rejected in tests)
         consensus.BIP34Hash = uint256();
-        // consensus.BIP65Height = 1351; // BIP65 activated on regtest (Used in rpc activation tests)
-        consensus.BIP66Height = 251; // BIP66 activated on regtest (Used in rpc activation tests)
+        consensus.BIP65Height = 0; // BIP65 activated on regtest (Used in rpc activation tests)
+        consensus.BIP66Height = 0; // BIP66 activated on regtest (Used in rpc activation tests)
         consensus.powLimit = uint256S("0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 1;
         consensus.nPowTargetTimespan = 1 * 60 * 60; // pre-digishield: 4 hours
         consensus.nPowTargetSpacing = 1; // regtest: 1 second blocks
@@ -491,4 +486,3 @@ void UpdateRegtestBIP9Parameters(Consensus::DeploymentPos d, int64_t nStartTime,
 {
     regTestParams.UpdateBIP9Parameters(d, nStartTime, nTimeout);
 }
- 

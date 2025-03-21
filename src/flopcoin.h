@@ -1,4 +1,4 @@
-// Copyright (c) 2015 The Flopcoin Core developers
+// Copyright (c) 2015-2022 The Dogecoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -18,5 +18,4 @@ unsigned int CalculateFlopcoinNextWorkRequired(const CBlockIndex* pindexLast, in
  */
 bool CheckAuxPowProofOfWork(const CBlockHeader& block, const Consensus::Params& params);
 
-CAmount GetFlopcoinMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowFree);
-CAmount GetFlopcoinDustFee(const std::vector<CTxOut> &vout, CFeeRate &baseFeeRate);
+

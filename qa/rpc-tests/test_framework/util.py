@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2014-2016 The Bitcoin Core developers
+# Copyright (c) 2021-2023 The Dogecoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -106,8 +107,8 @@ def rpc_port(n):
 def check_json_precision():
     """Make sure json library being used does not lose precision converting BTC values"""
     n = Decimal("20000000.00000003")
-    florinss = int(json.loads(json.dumps(float(n)))*1.0e8)
-    if florinss != 2000000000000003:
+    florins = int(json.loads(json.dumps(float(n)))*1.0e8)
+    if florins != 2000000000000003:
         raise RuntimeError("JSON encode/decode loses precision")
 
 def count_bytes(hex_string):
@@ -214,7 +215,7 @@ def wait_for_bitcoind_start(process, url, i):
     '''
     while True:
         if process.poll() is not None:
-            raise Exception('bitcoind exited with status %i during initialization' % process.returncode)
+            raise Exception('flopcoind exited with status %i during initialization' % process.returncode)
         try:
             rpc = get_rpc_proxy(url, i)
             blocks = rpc.getblockcount()
@@ -509,15 +510,12 @@ def random_transaction(nodes, amount, min_fee, fee_increment, fee_variants):
 
 def assert_fee_amount(fee, tx_size, fee_per_kB):
     """Assert the fee was in range"""
-    target_fee = round_tx_size(tx_size) * fee_per_kB / 1000
+    target_fee = tx_size * fee_per_kB / 1000
     if fee < target_fee:
-        raise AssertionError("Fee of %s BTC too low! (Should be %s BTC)"%(str(fee), str(target_fee)))
+        raise AssertionError("Fee of %s FLOP too low! (Should be %s FLOP)"%(str(fee), str(target_fee)))
     # allow the wallet's estimation to be at most 2 bytes off
-    if fee > round_tx_size(tx_size + 2) * fee_per_kB / 1000:
-        raise AssertionError("Fee of %s BTC too high! (Should be %s BTC)"%(str(fee), str(target_fee)))
-
-def round_tx_size(tx_size):
-    return int(math.ceil(tx_size / 1000.0)) * 1000
+    if fee > (tx_size + 2) * fee_per_kB / 1000:
+        raise AssertionError("Fee of %s FLOP too high! (Should be %s FLOP)"%(str(fee), str(target_fee)))
 
 def assert_equal(thing1, thing2, *args):
     if thing1 != thing2 or any(thing1 != arg for arg in args):
@@ -620,7 +618,7 @@ def assert_array_result(object_array, to_match, expected, should_not_find = Fals
     if num_matched > 0 and should_not_find == True:
         raise AssertionError("Objects were found %s"%(str(to_match)))
 
-def florins_round(amount):
+def florin_round(amount):
     return Decimal(amount).quantize(Decimal('0.00000001'), rounding=ROUND_DOWN)
 
 # Helper to create at least "count" utxos
@@ -639,8 +637,8 @@ def create_confirmed_utxos(fee, node, count):
         inputs.append({ "txid" : t["txid"], "vout" : t["vout"]})
         outputs = {}
         send_value = t['amount'] - fee
-        outputs[addr1] = florins_round(send_value/2)
-        outputs[addr2] = florins_round(send_value/2)
+        outputs[addr1] = florin_round(send_value/2)
+        outputs[addr2] = florin_round(send_value/2)
         raw_tx = node.createrawtransaction(inputs, outputs)
         signed_tx = node.signrawtransaction(raw_tx)["hex"]
         txid = node.sendrawtransaction(signed_tx)
@@ -690,7 +688,7 @@ def create_lots_of_big_transactions(node, txouts, utxos, num, fee):
         inputs=[{ "txid" : t["txid"], "vout" : t["vout"]}]
         outputs = {}
         change = t['amount'] - fee
-        outputs[addr] = florins_round(change)
+        outputs[addr] = florin_round(change)
         rawtx = node.createrawtransaction(inputs, outputs)
         newtx = rawtx[0:92]
         newtx = newtx + txouts

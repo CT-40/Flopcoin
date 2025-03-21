@@ -1,5 +1,6 @@
-// Copyright (c) 2009-2010 Florins Nakamoto
+// Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
+// Copyright (c) 2022-2023 The Dogecoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -8,11 +9,13 @@
 
 #include "amount.h"
 #include "auxpow.h"
+#include "flopcoin-fees.h"
 #include "streams.h"
 #include "tinyformat.h"
 #include "ui_interface.h"
 #include "utilstrencodings.h"
 #include "validationinterface.h"
+#include "policy/policy.h"
 #include "script/ismine.h"
 #include "script/sign.h"
 #include "wallet/crypter.h"
@@ -29,7 +32,6 @@
 #include <utility>
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
 
 extern CWallet* pwalletMain;
@@ -38,6 +40,8 @@ extern CWallet* pwalletMain;
  * Settings
  */
 extern CFeeRate payTxFee;
+//mlumin 5/2021: add minWalletTxFee to separate out wallet and relay.
+extern CFeeRate minWalletTxFeeRate;
 extern unsigned int nTxConfirmTarget;
 extern bool bSpendZeroConfChange;
 extern bool fSendFreeTransactions;
@@ -45,17 +49,24 @@ extern bool fWalletRbf;
 
 static const unsigned int DEFAULT_KEYPOOL_SIZE = 100;
 //! -paytxfee default
-static const CAmount DEFAULT_TRANSACTION_FEE = 0;
+static const CAmount DEFAULT_TRANSACTION_FEE = RECOMMENDED_MIN_TX_FEE;
 //! -fallbackfee default
-static const CAmount DEFAULT_FALLBACK_FEE = COIN;
+
+
+static const CAmount DEFAULT_FALLBACK_FEE = RECOMMENDED_MIN_TX_FEE;
 //! -mintxfee default
-static const CAmount DEFAULT_TRANSACTION_MINFEE = COIN;
+static const CAmount DEFAULT_TRANSACTION_MINFEE = RECOMMENDED_MIN_TX_FEE;
+//! -discardthreshold default
+
+static const CAmount DEFAULT_DISCARD_THRESHOLD = COIN / 100;
+
 //! minimum recommended increment for BIP 125 replacement txs
-static const CAmount WALLET_INCREMENTAL_RELAY_FEE = COIN * 5;
-//! target minimum change amount
-static const CAmount MIN_CHANGE = CENT;
-//! final minimum change amount after paying for fees
-static const CAmount MIN_FINAL_CHANGE = MIN_CHANGE/2;
+
+static const CAmount WALLET_INCREMENTAL_RELAY_FEE = RECOMMENDED_MIN_TX_FEE / 10;
+
+//! target minimum change fee multiplier
+static const CAmount MIN_CHANGE_FEE_MULTIPLIER = 2;
+
 //! Default for -spendzeroconfchange
 static const bool DEFAULT_SPEND_ZEROCONF_CHANGE = true;
 //! Default for -sendfreetransactions
@@ -189,7 +200,7 @@ public:
      * on this bitcoin node, and set to 0 for transactions that were created
      * externally and came in through the network or sendrawtransaction RPC.
      */
-    char fFromMe;
+    bool fFromMe;
     std::string strFromAccount;
     int64_t nOrderPos; //!< position in ordered transaction list
 
@@ -260,7 +271,7 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action) {
         if (ser_action.ForRead())
             Init(NULL);
-        char fSpent = false;
+        bool fSpent = false;
 
         if (!ser_action.ForRead())
         {
@@ -345,7 +356,6 @@ public:
     bool IsTrusted() const;
 
     int64_t GetTxTime() const;
-    int GetRequestCount() const;
 
     bool RelayWalletTransaction(CConnman* connman);
 
@@ -619,7 +629,6 @@ public:
     TxItems wtxOrdered;
 
     int64_t nOrderPosNext;
-    std::map<uint256, int> mapRequestCount;
 
     std::map<CTxDestination, CAddressBookData> mapAddressBook;
 
@@ -635,7 +644,7 @@ public:
     /**
      * populate vCoins with vector of available COutputs.
      */
-    void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed=true, const CCoinControl *coinControl = NULL, bool fIncludeZeroValue=false) const;
+    void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed=true, const CCoinControl *coinControl = NULL, const CAmount& nMinimumAmount = 1, const CAmount& nMaximumAmount = MAX_MONEY, const CAmount& nMinimumSumAmount = MAX_MONEY, const uint64_t& nMaximumCount = 0, const int& nMinDepth = 0, const int& nMaxDepth = 9999999) const;
 
     /**
      * Shuffle and select coins until nTargetValue is reached while avoiding
@@ -745,6 +754,13 @@ public:
 
     static CFeeRate minTxFee;
     static CFeeRate fallbackFee;
+    static CAmount discardThreshold;
+
+    /**
+     * Minimum change as a function of discardThreshold
+     */
+    static CAmount GetMinChange();
+
     /**
      * Estimate the minimum fee considering user set parameters
      * and the required fee
@@ -755,6 +771,14 @@ public:
      * then fee estimation for nConfirmTarget
      */
     static CAmount GetMinimumFee(const CMutableTransaction& tx, unsigned int nTxBytes, unsigned int nConfirmTarget, const CTxMemPool& pool, CAmount targetFee);
+    /**
+     * Flopcoin: Get a fee targetting a specific transaction speed.
+     */
+    CAmount GetFlopcoinPriorityFee(const CMutableTransaction& tx, unsigned int nTxBytes, FeeRatePreset nSpeed);
+    /**
+     * Flopcoin: Get a fee targetting a specific transaction speed.
+     */
+    static CAmount GetFlopcoinPriorityFee(const CMutableTransaction& tx, unsigned int nTxBytes, FeeRatePreset nSpeed, CAmount targetFee);
     /**
      * Return the minimum required fee taking into account the
      * floating relay fee and user set minimum transaction fee
@@ -812,23 +836,8 @@ public:
 
     void UpdatedTransaction(const uint256 &hashTx) override;
 
-    void Inventory(const uint256 &hash) override
-    {
-        {
-            LOCK(cs_wallet);
-            std::map<uint256, int>::iterator mi = mapRequestCount.find(hash);
-            if (mi != mapRequestCount.end())
-                (*mi).second++;
-        }
-    }
+    void GetScriptForMining(std::shared_ptr<CReserveScript> &script) override;
 
-    void GetScriptForMining(boost::shared_ptr<CReserveScript> &script) override;
-    void ResetRequestCount(const uint256 &hash) override
-    {
-        LOCK(cs_wallet);
-        mapRequestCount[hash] = 0;
-    };
-    
     unsigned int GetKeyPoolSize()
     {
         AssertLockHeld(cs_wallet); // setKeyPool

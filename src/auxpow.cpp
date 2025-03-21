@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2010 Florins Nakamoto
+// Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2011 Vince Durham
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2016 Daniel Kraft
@@ -100,6 +100,10 @@ CAuxPow::check(const uint256& hashAuxBlock, int nChainId,
     if (CheckMerkleBranch(GetHash(), vMerkleBranch, nIndex)
           != parentBlock.hashMerkleRoot)
         return error("Aux POW merkle root incorrect");
+
+    // Check that there is at least one input.
+    if (tx->vin.empty())
+        return error("Aux POW coinbase has no inputs");
 
     const CScript script = tx->vin[0].scriptSig;
 

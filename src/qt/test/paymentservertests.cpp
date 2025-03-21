@@ -1,4 +1,5 @@
 // Copyright (c) 2009-2015 The Bitcoin Core developers
+// Copyright (c) 2020-2023 The Dogecoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -66,7 +67,7 @@ void PaymentServerTests::paymentServerTests()
 {
     SelectParams(CBaseChainParams::MAIN);
     OptionsModel optionsModel;
-    PaymentServer* server = new PaymentServer(NULL, false);
+    PaymentServer* server = new PaymentServer(NULL, QString("testIPCServer"), false, true);
     X509_STORE* caStore = X509_STORE_new();
     X509_STORE_add_cert(caStore, parse_b64der_cert(caCert1_BASE64));
     PaymentServer::LoadRootCAs(caStore);
@@ -191,6 +192,8 @@ void PaymentServerTests::paymentServerTests()
     QCOMPARE(PaymentServer::verifySize(tempFile.size()), false);
 
     // Payment request with amount overflow (amount is set to 21000001 BTC):
+    /* PL: This doesn't work for Flopcoin (as there is no actual maximum coins)
+     *     I'm disabling this test for now.
     data = DecodeBase64(paymentrequest5_cert2_BASE64);
     byteArray = QByteArray((const char*)&data[0], data.size());
     r.paymentRequest.parse(byteArray);
@@ -203,6 +206,7 @@ void PaymentServerTests::paymentServerTests()
         if (ExtractDestination(sendingTo.first, dest))
             QCOMPARE(PaymentServer::verifyAmount(sendingTo.second), false);
     }
+    */
 
     delete server;
 }

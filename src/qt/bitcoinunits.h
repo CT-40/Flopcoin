@@ -1,4 +1,5 @@
 // Copyright (c) 2011-2016 The Bitcoin Core developers
+// Copyright (c) 2018-2022 The Dogecoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -82,7 +83,7 @@ public:
     static QString name(int unit);
     //! Longer description
     static QString description(int unit);
-    //! Number of Florinss (1e-8) per unit
+    //! Number of Satoshis (1e-8) per unit
     static qint64 factor(int unit);
     //! Number of decimals left
     static int decimals(int unit);
@@ -119,7 +120,7 @@ public:
         return text;
     }
 
-    //! Return maximum number of base units (Florinss)
+    //! Return maximum number of base units (Satoshis)
     static CAmount maxMoney();
 
 private:
