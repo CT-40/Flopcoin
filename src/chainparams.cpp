@@ -109,6 +109,15 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 1479168000;
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 0;
 
+
+        // Disable all unused version bits (3 to 28) for security
+        for (int i = 3; i < (int)Consensus::MAX_VERSION_BITS_DEPLOYMENTS; i++) {
+            consensus.vDeployments[i].bit = -1;
+            consensus.vDeployments[i].nStartTime = -1;
+            consensus.vDeployments[i].nTimeout = -1;
+        }
+
+
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000001e4e544b7e8f4925");
 

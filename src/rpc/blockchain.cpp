@@ -1820,6 +1820,281 @@ static UniValue getblockstats(const JSONRPCRequest& request)
     return ret;
 }
 
+UniValue getversionbitsinfo(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 0)
+        throw std::runtime_error(
+            "getversionbitsinfo\n"
+            "Returns the state of all version bits (0 to 28) and includes descriptions for bits 0, 1, and 2.\n"
+            "\nResult:\n"
+            "[\n"
+            "  {\n"
+            "    \"bit\": n,                      (numeric) The version bit\n"
+            "    \"description\": \"text\",       (string, optional) Description of the bit\n"
+            "    \"state\": \"text\",             (string) The state of the bit\n"
+            "    \"error_message\": \"text\"      (string, optional) Error message if applicable\n"
+            "  },...\n"
+            "]\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getversionbitsinfo", "")
+            + HelpExampleRpc("getversionbitsinfo", "")
+        );
+
+    LOCK(cs_main);
+
+    LogPrintf("Starting getversionbitsinfo command\n");
+
+    //UniValue result(UniValue::VARR);
+    //UniValue result(UniValue::VOBJ);
+
+    UniValue result(UniValue::VOBJ);
+    UniValue versionBits(UniValue::VARR);
+
+    // Access the current chain tip
+    CBlockIndex* pindex = chainActive.Tip();
+    if (!pindex) {
+        LogPrintf("Error: Chain tip (pindex) is null\n");
+        UniValue obj(UniValue::VOBJ);
+        obj.pushKV("error", "Chain tip not available. The wallet might be syncing.");
+        result.push_back(obj);
+        return result;
+    }
+
+    LogPrintf("Active chain tip accessed: height=%d, hash=%s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
+
+    // Bits to check (0 to 28)
+    const std::vector<int> bits_to_check = []() {
+        std::vector<int> bits;
+        for (int i = 0; i <= 28; ++i) {
+            bits.push_back(i);
+        }
+        return bits;
+    }();
+
+    // Map version bits to descriptions (only for 0, 1, and 2)
+    const std::map<int, std::string> bit_descriptions = {
+        {0, "BIP68, BIP112, BIP113 (CSV)"},
+        {1, "BIP141, BIP143, BIP147"}
+    };
+
+    for (int bit : bits_to_check) {
+        UniValue obj(UniValue::VOBJ);
+        obj.pushKV("bit", bit);
+
+        // Add description if available
+        if (bit_descriptions.count(bit)) {
+            obj.pushKV("description", bit_descriptions.at(bit));
+        }
+
+        LogPrintf("Checking state for version bit %d at height %d\n", bit, pindex->nHeight);
+
+        try {
+            Consensus::DeploymentPos deployment_pos;
+
+            if (bit == 0) {
+                deployment_pos = Consensus::DEPLOYMENT_CSV;
+            } else if (bit < 0 || bit >= (int)Consensus::MAX_VERSION_BITS_DEPLOYMENTS) {
+                obj.pushKV("state", "UNDEFINED");
+                obj.pushKV("error_message", "Version bit is not defined in deployments.");
+                versionBits.push_back(obj);
+                LogPrintf("Version bit %d is not defined; skipping.\n", bit);
+                continue;
+            } else {
+                deployment_pos = static_cast<Consensus::DeploymentPos>(bit);
+            }
+
+            // Query the state using VersionBitsTipState
+            ThresholdState state = VersionBitsTipState(Params().GetConsensus(pindex->nHeight), deployment_pos);
+
+            std::string stateStr;
+            switch (state) {
+                case THRESHOLD_DEFINED: stateStr = "DEFINED"; break;
+                case THRESHOLD_STARTED: stateStr = "STARTED"; break;
+                case THRESHOLD_LOCKED_IN: stateStr = "LOCKED_IN"; break;
+                case THRESHOLD_ACTIVE: stateStr = "ACTIVE"; break;
+                case THRESHOLD_FAILED: stateStr = "FAILED"; break;
+                default: stateStr = "UNKNOWN"; break;
+            }
+
+            obj.pushKV("state", stateStr);
+            LogPrintf("Version bit %d state: %s\n", bit, stateStr);
+        } catch (const std::exception& e) {
+            obj.pushKV("state", "ERROR");
+            obj.pushKV("error_message", e.what());
+            LogPrintf("Error processing version bit %d: %s\n", bit, e.what());
+        }
+
+        versionBits.push_back(obj);  // ? Store version bits here
+    }
+
+    LogPrintf("Completed loop for specified version bits\n");
+    LogPrintf("getversionbitsinfo command executed successfully\n");
+
+
+/************************
+	// Not dynamic so commenting it out for now, let's try another approach...
+    // Add height-based activations (BIP34, BIP65, BIP66)
+    UniValue bipSoftForks(UniValue::VARR);
+
+    int currentHeight = chainActive.Height();
+
+    // BIP34 - Block height in coinbase
+    UniValue bip34(UniValue::VOBJ);
+    bip34.pushKV("bit", "N/A"); // Not a version bits deployment
+    bip34.pushKV("description", "BIP34 (Block height in coinbase)");
+    bip34.pushKV("state", (currentHeight >= Params().GetConsensus(currentHeight).BIP34Height) ? "ACTIVE" : "NOT ACTIVE");
+    bipSoftForks.push_back(bip34);
+
+    // BIP65 - CHECKLOCKTIMEVERIFY (CLTV)
+    UniValue bip65(UniValue::VOBJ);
+    bip65.pushKV("bit", "N/A"); // Not a version bits deployment
+    bip65.pushKV("description", "BIP65 (CHECKLOCKTIMEVERIFY)");
+    bip65.pushKV("state", (currentHeight >= Params().GetConsensus(currentHeight).BIP65Height) ? "ACTIVE" : "NOT ACTIVE");
+    bipSoftForks.push_back(bip65);
+
+    // BIP66 - Strict DER signatures
+    UniValue bip66(UniValue::VOBJ);
+    bip66.pushKV("bit", "N/A"); // Not a version bits deployment
+    bip66.pushKV("description", "BIP66 (Strict DER signatures)");
+    bip66.pushKV("state", (currentHeight >= Params().GetConsensus(currentHeight).BIP66Height) ? "ACTIVE" : "NOT ACTIVE");
+    bipSoftForks.push_back(bip66);
+
+    // Add height-based forks to the final result
+    result.pushKV("height_based_forks", bipSoftForks);
+*******************/
+
+    // Add height-based activations (BIP34, BIP65, BIP66)
+    // Access the current active chain tip
+    const Consensus::Params& consensusParams = Params().GetConsensus(pindex->nHeight);
+    UniValue bipSoftForks(UniValue::VARR);
+
+    // BIP34 - Block height in coinbase
+    UniValue bip34(UniValue::VOBJ);
+    bip34.pushKV("bit", "N/A"); // Not a version bits deployment
+    bip34.pushKV("description", "BIP34 (Block height in coinbase)");
+
+    // Dynamically check if BIP34 is enforced
+    bool bip34Active = (pindex->nVersion >= 2) && (pindex->nHeight >= consensusParams.BIP34Height);
+    bip34.pushKV("state", bip34Active ? "ACTIVE" : "NOT ACTIVE");
+    bipSoftForks.push_back(bip34);
+
+    // BIP65 - CHECKLOCKTIMEVERIFY (CLTV)
+    UniValue bip65(UniValue::VOBJ);
+    bip65.pushKV("bit", "N/A");
+    bip65.pushKV("description", "BIP65 (CHECKLOCKTIMEVERIFY)");
+
+    // Dynamically check if BIP65 is enforced
+    bool bip65Active = (pindex->nVersion >= 4) && (pindex->nHeight >= consensusParams.BIP65Height);
+    bip65.pushKV("state", bip65Active ? "ACTIVE" : "NOT ACTIVE");
+    bipSoftForks.push_back(bip65);
+
+    // BIP66 - Strict DER signatures
+    UniValue bip66(UniValue::VOBJ);
+    bip66.pushKV("bit", "N/A");
+    bip66.pushKV("description", "BIP66 (Strict DER signatures)");
+
+    // Dynamically check if BIP66 is enforced
+    bool bip66Active = (pindex->nVersion >= 3) && (pindex->nHeight >= consensusParams.BIP66Height);
+    bip66.pushKV("state", bip66Active ? "ACTIVE" : "NOT ACTIVE");
+    bipSoftForks.push_back(bip66);
+
+    // Add height-based forks to the final result
+    result.pushKV("height_based_forks", bipSoftForks);
+
+    result.pushKV("version_bits", versionBits);
+
+    return result;
+}
+
+UniValue getdifficultyalgo(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 0)
+        throw std::runtime_error(
+            "getdifficultyalgo\n"
+            "Returns the currently active difficulty adjustment algorithm.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"algorithm\": \"string\"  (string) The active difficulty adjustment algorithm\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getdifficultyalgo", "")
+            + HelpExampleRpc("getdifficultyalgo", "")
+        );
+
+    LOCK(cs_main);
+
+    // Access the current chain tip
+    CBlockIndex* pindex = chainActive.Tip();
+    if (!pindex) {
+        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Error: Chain tip not available. Node might still be syncing.");
+    }
+
+    const Consensus::Params& consensus = Params().GetConsensus(pindex->nHeight);
+
+    std::string algo;
+
+    // Dynamically determine the difficulty algorithm based on the fork height
+    if (pindex->nHeight < consensus.V3ForkHeight) {
+        algo = "Legacy Retarget"; // Old difficulty adjustment
+    } else {
+        algo = "Digishield"; // New difficulty algorithm from Dogecoin team previously starting at height 157000!
+    }
+
+    UniValue result(UniValue::VOBJ);
+    result.pushKV("algorithm", algo);
+
+    return result;
+}
+
+UniValue isauxpowenabled(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 0)
+        throw std::runtime_error(
+            "isauxpowenabled\n"
+            "Returns whether AUXPOW (Merged Mining) is currently enabled.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"activated\": true|false,      (boolean) Whether AUXPOW is allowed based on block height\n"
+            "  \"has_mined_block\": true|false  (boolean) Whether at least one AUXPOW block has been mined\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("isauxpowenabled", "")
+            + HelpExampleRpc("isauxpowenabled", "")
+        );
+
+    LOCK(cs_main);
+
+    // Access the current chain tip
+    CBlockIndex* pindex = chainActive.Tip();
+    if (!pindex) {
+        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Error: Chain tip not available. Node might still be syncing.");
+    }
+
+    const Consensus::Params& consensus = Params().GetConsensus(pindex->nHeight);
+
+    // 1. Check if AUXPOW is activated based on block height
+    bool auxpowActivated = (pindex->nHeight >= consensus.AUXPOWHeight);
+
+    // 2. Check if at least one AUXPOW block has been mined
+    const CBlockIndex* pindexScan = pindex;
+    bool auxpowBlockFound = false;
+
+    while (pindexScan && pindexScan->nHeight >= consensus.AUXPOWHeight) {
+        if (pindexScan->IsAuxpow()) {
+            auxpowBlockFound = true;
+            break;
+        }
+        pindexScan = pindexScan->pprev;  // Move to the previous block
+    }
+
+    // Return both values in the JSON response
+    UniValue result(UniValue::VOBJ);
+    result.pushKV("activated", auxpowActivated);
+    result.pushKV("has_mined_block", auxpowBlockFound);
+
+    return result;
+}
+
 static const CRPCCommand commands[] =
 { //  category              name                      actor (function)         okSafe argNames
   //  --------------------- ------------------------  -----------------------  ------ ----------
@@ -1832,6 +2107,8 @@ static const CRPCCommand commands[] =
     { "blockchain",         "getblockheader",         &getblockheader,         true,  {"blockhash","verbose"} },
     { "blockchain",         "getchaintips",           &getchaintips,           true,  {} },
     { "blockchain",         "getdifficulty",          &getdifficulty,          true,  {} },
+    { "blockchain",         "getdifficultyalgo",      &getdifficultyalgo,      true,  {} },
+    { "blockchain",         "isauxpowenabled",        &isauxpowenabled,        true,  {} },
     { "blockchain",         "getmempoolancestors",    &getmempoolancestors,    true,  {"txid","verbose"} },
     { "blockchain",         "getmempooldescendants",  &getmempooldescendants,  true,  {"txid","verbose"} },
     { "blockchain",         "getmempoolentry",        &getmempoolentry,        true,  {"txid"} },
@@ -1839,6 +2116,7 @@ static const CRPCCommand commands[] =
     { "blockchain",         "getrawmempool",          &getrawmempool,          true,  {"verbose"} },
     { "blockchain",         "gettxout",               &gettxout,               true,  {"txid","n","include_mempool"} },
     { "blockchain",         "gettxoutsetinfo",        &gettxoutsetinfo,        true,  {} },
+    { "blockchain",         "getversionbitsinfo",     &getversionbitsinfo,     true,  {} },
     { "blockchain",         "pruneblockchain",        &pruneblockchain,        true,  {"height"} },
     { "blockchain",         "verifychain",            &verifychain,            true,  {"checklevel","nblocks"} },
 
