@@ -30,12 +30,19 @@ bool AllowDigishieldMinDifficultyForBlock(const CBlockIndex* pindexLast, const C
         return false;
 
     // check if the chain allows minimum difficulty blocks on recalc blocks
-    if (pindexLast->nHeight < 157500)
+    if (pindexLast->nHeight < params.V3ForkHeight)
     // if (!params.fPowAllowDigishieldMinDifficultyBlocks)
         return false;
 
     // Allow for a minimum block time if the elapsed time > 2*nTargetSpacing
-    return (pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nPowTargetSpacing*2);
+    //return (pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nPowTargetSpacing*2);
+
+    // Allow minimum difficulty ONLY on testnet/regtest
+    if (params.fPowAllowMinDifficultyBlocks)
+        return (pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nPowTargetSpacing*2);
+    // Mainnet: NO minimum difficulty allowed
+    return false;
+
 }
 
 unsigned int CalculateFlopcoinNextWorkRequired(const CBlockIndex* pindexLast, int64_t nFirstBlockTime, const Consensus::Params& params)

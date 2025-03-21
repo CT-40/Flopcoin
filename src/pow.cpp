@@ -22,11 +22,20 @@ bool AllowMinDifficultyForBlock(const CBlockIndex* pindexLast, const CBlockHeade
 
     // Flopcoin: Magic number at which reset protocol switches
     // check if we allow minimum difficulty at this block-height
-    if (pindexLast->nHeight < 157500)
+    if (pindexLast->nHeight < params.V3ForkHeight)
         return false;
 
+
+    // Allow minimum difficulty ONLY on testnet/regtest  //
+
     // Allow for a minimum block time if the elapsed time > 2*nTargetSpacing
-    return (pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nPowTargetSpacing*2);
+    //return (pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nPowTargetSpacing*2);
+
+    if (params.fPowAllowMinDifficultyBlocks)
+        return (pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nPowTargetSpacing*2);
+    // Mainnet: NO minimum difficulty allowed
+    return false;
+
 }
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
@@ -47,7 +56,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     }
 
     // Only change once per difficulty adjustment interval
-    bool fNewDifficultyProtocol = (pindexLast->nHeight >= 145000);
+    bool fNewDifficultyProtocol = (pindexLast->nHeight >= params.V3ForkHeight);
     const int64_t difficultyAdjustmentInterval = fNewDifficultyProtocol
                                                  ? 1
                                                  : params.DifficultyAdjustmentInterval();

@@ -78,14 +78,15 @@ public:
         consensus.nMajorityEnforceBlockUpgrade = 1500;
         consensus.nMajorityRejectBlockOutdated = 1900;
         consensus.nMajorityWindow = 2000;
-        // BIP34 is never enforced in Flopcoin v2 blocks, so we enforce from v3
+	consensus.V3ForkHeight = 111000;
+	consensus.AUXPOWHeight = 110000;
         consensus.BIP34Height = 100;
         consensus.BIP34Hash = uint256S("0x67cf3c48ee2ff1db2598e59b8841c85c3e080758bd5a105158bccf4d268c0ab5");
-        consensus.BIP65Height = 110000;
+        consensus.BIP65Height = consensus.V3ForkHeight;
         consensus.BIP66Height = 101;
         consensus.powLimit = uint256S("0x00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 20;
-        consensus.nPowTargetTimespan = 1 * 60 * 60; // pre-digishield: 1 hours
-        consensus.nPowTargetSpacing = 60; // 1 minute
+        consensus.nPowTargetTimespan = 1 * 60 * 60;
+        consensus.nPowTargetSpacing = 60;
         consensus.fDigishieldDifficultyCalculation = false;
         consensus.nCoinbaseMaturity = 30;
         consensus.fPowAllowMinDifficultyBlocks = false;
@@ -120,7 +121,7 @@ public:
         consensus.fAllowLegacyBlocks = true;
         consensus.nHeightEffective = 0;
 
-        // Blocks 145 - 109999 are Digishield without AuxPoW
+        // Blocks 145 - 109,999 are Digishield without AuxPoW
         digishieldConsensus = consensus;
         digishieldConsensus.nHeightEffective = 145;
         digishieldConsensus.fSimplifiedRewards = true;
@@ -130,7 +131,7 @@ public:
 
         // Blocks 110000+ are AuxPoW
         auxpowConsensus = digishieldConsensus;
-        auxpowConsensus.nHeightEffective = 110000;
+        auxpowConsensus.nHeightEffective = consensus.AUXPOWHeight;
         auxpowConsensus.fAllowLegacyBlocks = false;
 
         // Assemble the binary search tree of consensus parameters
