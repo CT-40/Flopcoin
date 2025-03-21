@@ -2186,7 +2186,17 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
     {
         int nUpgraded = 0;
         const CBlockIndex* pindex = chainActive.Tip();
+
+	//const Consensus::Params& consensusParams = chainParams.GetConsensus();
         for (int bit = 0; bit < VERSIONBITS_NUM_BITS; bit++) {
+	  // temporary disabled method, might change it later if we want enable soft forks or use versionbits
+    	  //if (pindexNew->nHeight >= consensusParams.V3ForkHeight) {
+    	    //if (bit > 2) {
+        	//LogPrintf("DEBUG: Ignoring versionbit %i (Security Restriction)\n", bit);
+        	//continue;
+    	    //}
+     	  //}
+
             WarningBitsConditionChecker checker(bit);
             ThresholdState state = checker.GetStateFor(pindex, chainParams.GetConsensus(pindex->nHeight), warningcache[bit]);
             if (state == THRESHOLD_ACTIVE || state == THRESHOLD_LOCKED_IN) {
