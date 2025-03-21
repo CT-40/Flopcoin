@@ -74,8 +74,6 @@ private:
 public:
     CMainParams() {
         strNetworkID = "main";
-
-        // Blocks 0 - 144999 are conventional difficulty calculation
         consensus.nSubsidyHalvingInterval = 100000;
         consensus.nMajorityEnforceBlockUpgrade = 1500;
         consensus.nMajorityRejectBlockOutdated = 1900;
@@ -93,22 +91,22 @@ public:
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowAllowDigishieldMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = false;
-        consensus.nRuleChangeActivationThreshold = 9576; // 95% of 10,080
-        consensus.nMinerConfirmationWindow = 10080; // 60 * 24 * 7 = 10,080 blocks, or one week
+        consensus.nRuleChangeActivationThreshold = 9576;
+        consensus.nMinerConfirmationWindow = 10080;
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
-        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 1199145601; // January 1, 2008
-        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 1230767999; // December 31, 2008
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 1199145601;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 1230767999;
 
         // Deployment of BIP68, BIP112, and BIP113.
         // XXX: BIP heights and hashes all need to be updated to Flopcoin values
         consensus.vDeployments[Consensus::DEPLOYMENT_CSV].bit = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartTime = 1462060800; // May 1st, 2016
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 1493596800; // May 1st, 2017
+        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartTime = 1462060800;
+        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 1493596800;
 
         // Deployment of SegWit (BIP141, BIP143, and BIP147)
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].bit = 1;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 1479168000; // November 15th, 2016.
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 0; // Disabled
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 1479168000;
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 0;
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000001e4e544b7e8f4925");
