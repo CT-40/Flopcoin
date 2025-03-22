@@ -106,5 +106,6 @@
         <file alias="NotoSans-Light">res/fonts/NotoSans-Light.ttf</file>
         <file alias="NotoSans-Medium">res/fonts/NotoSans-Medium.ttf</file>
         <file alias="NotoSans-Regular">res/fonts/NotoSans-Regular.ttf</file>
+        <file alias="infoma">res/fonts/Infoma-Regular.ttf</file>
     </qresource>
 </RCC>

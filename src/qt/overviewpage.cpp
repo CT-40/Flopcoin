@@ -93,8 +93,15 @@ public:
         }
         painter->drawText(amountRect, Qt::AlignRight|Qt::AlignVCenter, amountText);
 
+        QFont originalFont = painter->font();
+        QFont smallFont = originalFont;
+        smallFont.setPointSize(7);
+        painter->setFont(smallFont);
+
         painter->setPen(option.palette.color(QPalette::Text));
         painter->drawText(amountRect, Qt::AlignLeft|Qt::AlignVCenter, GUIUtil::dateTimeStr(date));
+
+        painter->setFont(originalFont);
 
         painter->restore();
     }
@@ -108,6 +115,7 @@ public:
     const PlatformStyle *platformStyle;
 
 };
+
 #include "overviewpage.moc"
 
 OverviewPage::OverviewPage(const PlatformStyle *platformStyle, QWidget *parent) :

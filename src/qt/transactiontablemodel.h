@@ -10,6 +10,10 @@
 #include <QAbstractTableModel>
 #include <QStringList>
 
+
+#include <QTableView>
+#include <QHeaderView>
+
 class PlatformStyle;
 class TransactionRecord;
 class TransactionTablePriv;
@@ -81,6 +85,7 @@ public:
     QModelIndex index(int row, int column, const QModelIndex & parent = QModelIndex()) const;
     bool processingQueuedTransactions() { return fProcessingQueuedTransactions; }
 
+
 private:
     CWallet* wallet;
     WalletModel *walletModel;
@@ -104,6 +109,8 @@ private:
     QVariant txWatchonlyDecoration(const TransactionRecord *wtx) const;
     QVariant txAddressDecoration(const TransactionRecord *wtx) const;
 
+    void setColumnWidths(QTableView *tableView);
+
 public Q_SLOTS:
     /* New transaction, or transaction changed status */
     void updateTransaction(const QString &hash, int status, bool showTransaction);
@@ -113,6 +120,7 @@ public Q_SLOTS:
     void updateAmountColumnTitle();
     /* Needed to update fProcessingQueuedTransactions through a QueuedConnection */
     void setProcessingQueuedTransactions(bool value) { fProcessingQueuedTransactions = value; }
+
 
     friend class TransactionTablePriv;
 };

@@ -790,3 +790,14 @@ void TransactionTableModel::unsubscribeFromCoreSignals()
                                                 boost::placeholders::_1,
                                                 boost::placeholders::_2));
 }
+
+void TransactionTableModel::setColumnWidths(QTableView *tableView) {
+    if (!tableView) return;
+
+    tableView->setColumnWidth(Date, 200);   // Increase Date column width
+    tableView->setColumnWidth(Amount, 180); // Increase Amount column width
+
+    // Optional: Prevents user from shrinking the columns too much
+    tableView->horizontalHeader()->setSectionResizeMode(Date, QHeaderView::Fixed);
+    tableView->horizontalHeader()->setSectionResizeMode(Amount, QHeaderView::Fixed);
+}
