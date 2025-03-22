@@ -35,6 +35,9 @@
 #include <array>
 #include <boost/thread.hpp>
 
+#include <regex>
+#include "clientversion.h"
+
 #if defined(NDEBUG)
 # error "Flopcoin cannot be compiled without assertions."
 #endif
@@ -1324,6 +1327,25 @@ void static ProcessOrphanTx(CConnman* connman, std::set<uint256>& orphan_work_se
     }
 }
 
+bool IsCompatibleVersion(const std::string& subVer) {
+    std::string pattern = "/" + CLIENT_NAME + R"(:([0-9]+)\.([0-9]+)\.([0-9]+)(?:\.([0-9]+))?/)";
+    std::regex versionRegex(pattern);
+    std::smatch match;
+
+    if (std::regex_search(subVer, match, versionRegex)) {
+        int major = std::stoi(match[1]);
+        int minor = std::stoi(match[2]);
+        int patch = std::stoi(match[3]);
+
+        // Require at least v1.3.0.x
+        if (major < 1) return false;
+        if (major == 1 && minor < 3) return false;
+        return true;
+    }
+
+    return false; // If parsing fails, assume incompatible
+}
+
 bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, int64_t nTimeReceived, const CChainParams& chainparams, CConnman& connman, const std::atomic<bool>& interruptMsgProc)
 {
     LogPrint("net", "received: %s (%u bytes) peer=%d\n", SanitizeString(strCommand), vRecv.size(), pfrom->id);
@@ -1475,14 +1497,23 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         ////////// Compatibility Checks START //////////
 	int currentHeight = chainActive.Height();
 	int64_t currentTime = GetTime();
+
 	if (currentHeight >= Params().GetConsensus(currentHeight).V3ForkHeight) {
-	    std::string localSubVer = strSubVersion;
-	    if (pfrom->cleanSubVer != localSubVer) {
-    		LogPrintf("DEBUG: Peer %d has unsupported SubVer '%s'; disconnecting.\n", pfrom->GetId(), pfrom->cleanSubVer);
-    		pfrom->fDisconnect = true;
-    		return false;
-	    }
-        }
+ 	   // Reject peers with version below v1.3.0.0
+  	  if (!IsCompatibleVersion(pfrom->cleanSubVer)) {
+   	     LogPrintf("DEBUG: Peer %d has unsupported SubVer '%s'; disconnecting.\n", pfrom->GetId(), pfrom->cleanSubVer);
+   	     pfrom->fDisconnect = true;
+    	    return false;
+   	 }
+
+  	  // Reject non-Flopcoin clients
+	 std::string projectPrefix = "/" + CLIENT_NAME + ":";
+   	 if (pfrom->cleanSubVer.find(projectPrefix) != 0) {
+    	    LogPrintf("DEBUG: Peer %d is not a Flopcoin node (subVer '%s'); disconnecting.\n", pfrom->GetId(), pfrom->cleanSubVer);
+     	   pfrom->fDisconnect = true;
+    	    return false;
+  	  }
+	}
         ////////// Compatibility Checks END //////////
 
         if((nServices & NODE_WITNESS))
@@ -3538,3 +3569,4 @@ public:
         mapOrphanTransactionsByPrev.clear();
     }
 } instance_of_cnetprocessingcleanup;
+
