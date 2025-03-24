@@ -151,6 +151,12 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     nHeight = pindexPrev->nHeight + 1;
 
     const Consensus::Params& consensus = chainparams.GetConsensus(nHeight);
+    // Stop mining process after V2_0ForkHeiht
+    if (nHeight >= consensus.V2_0ForkHeight) {
+        throw std::runtime_error(strprintf(
+            "ERROR: Block height %d is past the fork limit (%d). This version cannot mine new blocks. Please upgrade to v2.0.0.0.",
+            nHeight, consensus.V2_0ForkHeight));
+    }
     const int32_t nChainId = consensus.nAuxpowChainId;
     // FIXME: Active version bits after the always-auxpow fork!
     // const int32_t nVersion = ComputeBlockVersion(pindexPrev, consensus);
