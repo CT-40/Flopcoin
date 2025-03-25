@@ -89,7 +89,7 @@ std::string GetWarnings(const std::string& strFor)
                           + std::to_string(consensusParams.V2_0ForkHeight - 1) + ".";
 
         strStatusBar = msg;
-        strRPC = msg;
+        //strRPC = msg;
         strGUI += (strGUI.empty() ? "" : uiAlertSeperator) + msg;
     }
 
