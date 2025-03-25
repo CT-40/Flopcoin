@@ -1,5 +1,5 @@
 ## 🪙 Flopcoin Core v1.3.1.0 Release Notes  
-**Release Date:** March 23, 2025  
+**Release Date:** March 25, 2025  
 **Network Compatibility:** Prepares for upcoming v2.0.0.0 hard fork at block height **115000**  
 
 ---
