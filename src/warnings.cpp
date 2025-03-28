@@ -83,7 +83,7 @@ std::string GetWarnings(const std::string& strFor)
         strGUI += (strGUI.empty() ? "" : uiAlertSeperator) + _("Warning: We do not appear to fully agree with our peers! You may need to upgrade, or other nodes may need to upgrade.");
     }
 
-    if (currentHeight >= consensusParams.V2_0ForkHeight - 5000 && currentHeight <= consensusParams.V2_0ForkHeight - 2) {
+    if (currentHeight >= consensusParams.V2_0ForkHeight - 5100 && currentHeight <= consensusParams.V2_0ForkHeight - 2) {
         std::string msg = "You are " + std::to_string(consensusParams.V2_0ForkHeight - currentHeight) +
                           " blocks away from the v2.0.0.0 hard fork. Please prepare to upgrade once you reach block height "
                           + std::to_string(consensusParams.V2_0ForkHeight - 1) + ".";
