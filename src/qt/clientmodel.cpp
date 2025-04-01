@@ -311,9 +311,6 @@ static void BlockTipChanged(ClientModel *clientmodel, bool initialSync, const CB
                                   Q_ARG(QDateTime, QDateTime::fromTime_t(pIndex->GetBlockTime())),
                                   Q_ARG(double, clientmodel->getVerificationProgress(pIndex)),
                                   Q_ARG(bool, fHeader));
-        // update block height on warnings
-        QMetaObject::invokeMethod(clientmodel, "alertsChanged", Qt::QueuedConnection,
-                                  Q_ARG(QString, QString::fromStdString(GetWarnings("gui"))));
         nLastUpdateNotification = now;
     }
 }

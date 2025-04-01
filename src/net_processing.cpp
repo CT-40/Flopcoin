@@ -38,9 +38,6 @@
 #include <regex>
 #include "clientversion.h"
 
-CCriticalSection cs_vNodes;
-std::vector<CNode*> vNodes;
-
 #if defined(NDEBUG)
 # error "Flopcoin cannot be compiled without assertions."
 #endif

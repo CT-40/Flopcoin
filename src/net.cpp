@@ -23,9 +23,6 @@
 #include "ui_interface.h"
 #include "utilstrencodings.h"
 
-#include "validation.h"
-#include "net_processing.h"
-
 #ifdef WIN32
 #include <string.h>
 #else
@@ -39,11 +36,8 @@
 #include <miniupnpc/upnperrors.h>
 #endif
 
-#include <math.h>
 
-extern CCriticalSection cs_vNodes;
-extern std::vector<CNode*> vNodes;
-extern void SetNetworkActive(bool active);
+#include <math.h>
 
 // Dump addresses to peers.dat and banlist.dat every 15 minutes (900s)
 #define DUMP_ADDRESSES_INTERVAL 900
@@ -2016,14 +2010,10 @@ bool CConnman::OpenNetworkConnection(const CAddress& addrConnect, bool fCountFai
     return true;
 }
 
-
 void CConnman::ThreadMessageHandler()
 {
     while (!flagInterruptMsgProc)
     {
-        // V2_0ForkHeight disconnect logic
-        CheckForkDisconnect();
-
         std::vector<CNode*> vNodesCopy;
         {
             LOCK(cs_vNodes);
@@ -2857,47 +2847,4 @@ uint64_t CConnman::CalculateKeyedNetGroup(const CAddress& ad) const
     std::vector<unsigned char> vchNetGroup(ad.GetGroup());
 
     return GetDeterministicRandomizer(RANDOMIZER_ID_NETGROUP).Write(&vchNetGroup[0], vchNetGroup.size()).Finalize();
-}
-
-/**********
-void CheckForkDisconnect() {
-    int currentHeight = chainActive.Height();
-    const Consensus::Params& consensusParams = Params().GetConsensus(currentHeight);
-
-    if (currentHeight >= consensusParams.V2_0ForkHeight - 1) {
-        LogPrintf("WARNING: Node has reached fork height %d. Disconnecting all peers and disabling network activity.\n", consensusParams.V2_0ForkHeight);
-
-        LOCK(cs_vNodes);
-        for (CNode* pnode : vNodes) {
-            pnode->fDisconnect = true;
-        }
-
-        SetNetworkActive(false);
-    }
-}
-**********/
-
-void CheckForkDisconnect() {
-    static bool hasLogged = false; // ? ensure the log only prints once
-    int currentHeight = chainActive.Height();
-    const Consensus::Params& consensusParams = Params().GetConsensus(currentHeight);
-
-    if (currentHeight >= consensusParams.V2_0ForkHeight - 1) {
-        if (!hasLogged) {
-            LogPrintf("WARNING: Node has reached fork height %d. Disconnecting all peers and disabling network activity.\n", consensusParams.V2_0ForkHeight);
-            hasLogged = true;
-        }
-
-        LOCK(cs_vNodes);
-        for (CNode* pnode : vNodes) {
-            pnode->fDisconnect = true;
-        }
-
-        SetNetworkActive(false);
-    }
-}
-
-void SetNetworkActive(bool active)
-{
-    g_connman->SetNetworkActive(active); // assuming g_connman is global
 }
