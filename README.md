@@ -1,5 +1,5 @@
 <h1 align="center">
-<img src="https://i.imgur.com/h0hD7dD.png" alt="Flopcoin" width="300"/>
+<img src="https://i.imgur.com/FSQgWZq.png" alt="Flopcoin" width="300"/>
 <br/><br/>
 Flopcoin Core [FLOP, F]
 </h1>
