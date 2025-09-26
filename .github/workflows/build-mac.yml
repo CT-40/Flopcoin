@@ -12,32 +12,34 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: Install dependencies
         run: |
           brew update
           brew install autoconf automake libtool boost openssl berkeley-db4 pkg-config libevent qt@5 miniupnpc protobuf
-          export BOOST_ROOT=$(brew --prefix boost)
-          export BOOST_INCLUDEDIR=$BOOST_ROOT/include
-          export BOOST_LIBRARYDIR=$BOOST_ROOT/lib
-          export LDFLAGS="-L$BOOST_LIBRARYDIR -L/usr/local/opt/openssl/lib"
-          export CPPFLAGS="-I$BOOST_INCLUDEDIR -I/usr/local/opt/openssl/include"
-          export PKG_CONFIG_PATH="$BOOST_LIBRARYDIR/pkgconfig"
-          export QT5_DIR="$(brew --prefix qt@5)"
-          export PATH="$QT5_DIR/bin:$PATH"
+          echo "BOOST_ROOT=$(brew --prefix boost)" >> $GITHUB_ENV
+          echo "OPENSSL_ROOT=$(brew --prefix openssl)" >> $GITHUB_ENV
+          echo "QT_DIR=$(brew --prefix qt@5)" >> $GITHUB_ENV
+
       - name: Build Flopcoin
         run: |
+          export LDFLAGS="-L$BOOST_ROOT/lib -L$OPENSSL_ROOT/lib"
+          export CPPFLAGS="-I$BOOST_ROOT/include -I$OPENSSL_ROOT/include"
+          export PKG_CONFIG_PATH="$BOOST_ROOT/lib/pkgconfig:$OPENSSL_ROOT/lib/pkgconfig"
+          export PATH="$QT_DIR/bin:$PATH"
+
           ./autogen.sh
-          make clean || true
-          rm -f config.cache
-          ./configure --with-gui=qt5 --with-boost=$BOOST_ROOT --with-boost-libdir=$BOOST_LIBRARYDIR
+          ./configure --with-gui=qt5 --with-boost-libdir=$BOOST_ROOT/lib
           make -j$(sysctl -n hw.ncpu)
+
       - name: Upload macOS daemon
         uses: actions/upload-artifact@v4
         with:
           name: flopcoin-macos
           path: src/flopcoind
+
       - name: Upload macOS Qt GUI
         uses: actions/upload-artifact@v4
         with:
           name: flopcoin-qt-macos
-          path: src/flopcoin-qt
+          path: src/qt/flopcoin-qt
