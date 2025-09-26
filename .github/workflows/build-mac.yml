@@ -17,19 +17,21 @@ jobs:
         run: |
           brew update
           brew install autoconf automake libtool boost openssl berkeley-db4 pkg-config libevent qt@5 miniupnpc protobuf
-          echo "BOOST_ROOT=$(brew --prefix boost)" >> $GITHUB_ENV
-          echo "OPENSSL_ROOT=$(brew --prefix openssl)" >> $GITHUB_ENV
-          echo "QT_DIR=$(brew --prefix qt@5)" >> $GITHUB_ENV
 
       - name: Build Flopcoin
         run: |
-          export LDFLAGS="-L$BOOST_ROOT/lib -L$OPENSSL_ROOT/lib"
-          export CPPFLAGS="-I$BOOST_ROOT/include -I$OPENSSL_ROOT/include"
-          export PKG_CONFIG_PATH="$BOOST_ROOT/lib/pkgconfig:$OPENSSL_ROOT/lib/pkgconfig"
+          export BOOST_ROOT=$(brew --prefix boost)
+          export BOOST_INCLUDEDIR=$BOOST_ROOT/include
+          export BOOST_LIBRARYDIR=$BOOST_ROOT/lib
+          export OPENSSL_ROOT=$(brew --prefix openssl)
+          export LDFLAGS="-L$BOOST_LIBRARYDIR -L$OPENSSL_ROOT/lib"
+          export CPPFLAGS="-I$BOOST_INCLUDEDIR -I$OPENSSL_ROOT/include"
+          export PKG_CONFIG_PATH="$BOOST_LIBRARYDIR/pkgconfig:$OPENSSL_ROOT/lib/pkgconfig"
+          export QT_DIR=$(brew --prefix qt@5)
           export PATH="$QT_DIR/bin:$PATH"
 
           ./autogen.sh
-          ./configure --with-gui=qt5 --with-boost-libdir=$BOOST_ROOT/lib
+          ./configure --with-gui=qt5 --with-boost=$BOOST_ROOT --with-boost-libdir=$BOOST_LIBRARYDIR
           make -j$(sysctl -n hw.ncpu)
 
       - name: Upload macOS daemon
