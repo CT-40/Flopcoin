@@ -1,3 +1,11 @@
+name: Build Flopcoin Wallet
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
   # -------------------- macOS --------------------
   build-macos:
     name: Build macOS (daemon + Qt GUI)
