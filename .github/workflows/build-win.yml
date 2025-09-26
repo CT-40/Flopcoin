@@ -1,0 +1,33 @@
+name: Build Flopcoin Wallet - Windows
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  # -------------------- Windows --------------------
+  build-windows:
+    name: Build Windows (daemon + Qt GUI)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Visual Studio
+        uses: microsoft/setup-msbuild@v1
+      - name: Install vcpkg and dependencies
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
+          C:\vcpkg\bootstrap-vcpkg.bat
+          C:\vcpkg\vcpkg install boost:x64-windows openssl:x64-windows qt5:x64-windows miniupnpc:x64-windows
+      - name: Build Flopcoin
+        run: msbuild src\flopcoin.sln /p:Configuration=Release
+      - name: Upload Windows daemon
+        uses: actions/upload-artifact@v4
+        with:
+          name: flopcoin-windows
+          path: src\Release\flopcoind.exe
+      - name: Upload Windows Qt GUI
+        uses: actions/upload-artifact@v4
+        with:
+          name: flopcoin-qt-windows
+          path: src\Release\flopcoin-qt.exe
