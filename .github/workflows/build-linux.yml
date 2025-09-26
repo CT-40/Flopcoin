@@ -36,11 +36,6 @@ jobs:
       - name: Build Flopcoin
         run: make -j$(nproc)
 
-      - name: Strip binaries
-        run: |
-          strip src/flopcoind src/flopcoin-cli src/flopcoin-tx
-          [ -f src/qt/flopcoin-qt ] && strip src/qt/flopcoin-qt
-
       - name: Upload Linux binaries
         uses: actions/upload-artifact@v4
         with:
