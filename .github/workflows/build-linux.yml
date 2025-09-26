@@ -8,43 +8,42 @@ on:
 jobs:
   # -------------------- Linux --------------------
   build-linux:
-    name: Build Linux (daemon + Qt GUI)
+    name: Build Linux (daemon + Qt GUI) - Portable
     runs-on: ubuntu-22.04
-    env:
-      CC: gcc
-      CXX: g++
     steps:
       - uses: actions/checkout@v3
-      - name: Install dependencies
+
+      - name: Install build dependencies
         run: |
-          sudo apt update
-          sudo apt install -y \
+          sudo apt-get update
+          sudo apt-get install -y \
             build-essential libtool autotools-dev automake pkg-config \
-            libssl-dev libboost-all-dev libdb++-dev libevent-dev bsdmainutils git \
-            qt5-qmake qtbase5-dev qttools5-dev qttools5-dev-tools libminiupnpc-dev \
-            protobuf-compiler libprotobuf-dev
-      - name: Build Flopcoin
+            bsdmainutils curl git
+
+      - name: Build depends (Linux)
+        run: |
+          cd depends
+          make -j$(nproc) NO_QT=0
+          cd ..
+
+      - name: Configure with depends
         run: |
           ./autogen.sh
-          ./configure --with-gui=qt5
-          make -j$(nproc)
-      - name: Upload Linux daemon
+          CONFIG_SITE=$PWD/depends/x86_64-pc-linux-gnu/share/config.site \
+          ./configure --prefix=/
+
+      - name: Build Flopcoin
+        run: make -j$(nproc)
+
+      - name: Strip binaries
+        run: strip src/flopcoind src/flopcoin-cli src/flopcoin-tx src/qt/flopcoin-qt
+
+      - name: Upload Linux binaries
         uses: actions/upload-artifact@v4
         with:
-          name: flopcoin-linux-d
-          path: src/flopcoind
-      - name: Upload Linux CLI
-        uses: actions/upload-artifact@v4
-        with:
-          name: flopcoin-linux-cli
-          path: src/flopcoin-cli
-      - name: Upload Linux TX
-        uses: actions/upload-artifact@v4
-        with:
-          name: flopcoin-linux-tx
-          path: src/flopcoin-tx
-      - name: Upload Linux Qt GUI
-        uses: actions/upload-artifact@v4
-        with:
-          name: flopcoin-qt-linux
-          path: src/qt/flopcoin-qt
+          name: flopcoin-linux
+          path: |
+            src/flopcoind
+            src/flopcoin-cli
+            src/flopcoin-tx
+            src/qt/flopcoin-qt
