@@ -1,0 +1,40 @@
+name: Build Flopcoin Wallet
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  # -------------------- Linux --------------------
+  build-linux:
+    name: Build Linux (daemon + Qt GUI)
+    runs-on: ubuntu-22.04
+    env:
+      CC: gcc
+      CXX: g++
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            build-essential libtool autotools-dev automake pkg-config \
+            libssl-dev libboost-all-dev libdb++-dev libevent-dev bsdmainutils git \
+            qt5-qmake qtbase5-dev qttools5-dev qttools5-dev-tools libminiupnpc-dev \
+            protobuf-compiler libprotobuf-dev
+      - name: Build Flopcoin
+        run: |
+          ./autogen.sh
+          ./configure --with-gui=qt5
+          make -j$(nproc)
+      - name: Upload Linux daemon
+        uses: actions/upload-artifact@v4
+        with:
+          name: flopcoin-linux
+          path: src/flopcoind
+      - name: Upload Linux Qt GUI
+        uses: actions/upload-artifact@v4
+        with:
+          name: flopcoin-qt-linux
+          path: src/qt/flopcoin-qt
