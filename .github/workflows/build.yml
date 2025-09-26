@@ -1,0 +1,83 @@
+name: Build Flopcoin Wallet
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Cache apt packages
+        uses: actions/cache@v3
+        with:
+          path: /usr/lib
+          key: linux-deps-{{ runner.os }}
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential libtool autotools-dev automake pkg-config \
+                              libssl-dev libboost-all-dev libdb++-dev libevent-dev bsdmainutils git
+      - name: Build Flopcoin
+        run: |
+          ./autogen.sh
+          ./configure
+          make -j$(nproc)
+      - name: Upload Linux binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: flopcoin-linux
+          path: src/flopcoind
+
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install MSYS2
+        run: choco install msys2 -y
+      - name: Update MSYS2 and install dependencies
+        shell: bash
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm base-devel mingw-w64-x86_64-toolchain \
+                              mingw-w64-x86_64-boost mingw-w64-x86_64-berkeley-db4 \
+                              mingw-w64-x86_64-openssl mingw-w64-x86_64-libevent git
+      - name: Build Flopcoin
+        shell: bash
+        run: |
+          ./autogen.sh
+          ./configure --disable-tests
+          make -j$(nproc)
+      - name: Upload Windows binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: flopcoin-windows
+          path: src/flopcoind.exe
+
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: |
+          brew install autoconf automake libtool boost openssl berkeley-db4 pkg-config libevent
+      - name: Set OpenSSL paths
+        run: |
+          export LDFLAGS="-L/usr/local/opt/openssl/lib"
+          export CPPFLAGS="-I/usr/local/opt/openssl/include"
+          export PKG_CONFIG_PATH="/usr/local/opt/openssl/lib/pkgconfig"
+      - name: Build Flopcoin
+        run: |
+          ./autogen.sh
+          ./configure
+          make -j$(sysctl -n hw.ncpu)
+      - name: Upload macOS binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: flopcoin-macos
+          path: src/flopcoind
