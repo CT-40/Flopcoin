@@ -1,4 +1,4 @@
-name: Build Flopcoin Wallet
+name: Build Flopcoin Wallet -MAC
 
 on:
   push:
