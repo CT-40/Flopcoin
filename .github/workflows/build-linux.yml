@@ -31,11 +31,17 @@ jobs:
       - name: Configure Flopcoin with depends Qt
         run: |
           ./autogen.sh
-          export PATH=$PWD/depends/x86_64-pc-linux-gnu/native/bin:$PATH
-          export PKG_CONFIG_PATH=$PWD/depends/x86_64-pc-linux-gnu/native/lib/pkgconfig
-          export QMAKE=$PWD/depends/x86_64-pc-linux-gnu/native/bin/qmake
+          DEPENDS_NATIVE=$PWD/depends/x86_64-pc-linux-gnu/native
+          export QMAKE=$DEPENDS_NATIVE/bin/qmake
+          export PATH=$DEPENDS_NATIVE/bin:$PATH
+          export PKG_CONFIG_PATH=$DEPENDS_NATIVE/lib/pkgconfig
           CONFIG_SITE=$PWD/depends/x86_64-pc-linux-gnu/share/config.site \
-          ./configure --prefix=/ --with-gui=qt5
+          ./configure \
+            --prefix=/ \
+            --with-gui=qt5 \
+            --with-qt-bindir=$DEPENDS_NATIVE/bin \
+            --with-qt-incdir=$DEPENDS_NATIVE/include \
+            --with-qt-libdir=$DEPENDS_NATIVE/lib
 
       - name: Build Flopcoin (daemon + CLI + Qt GUI)
         run: |
