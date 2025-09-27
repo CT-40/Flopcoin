@@ -1,4 +1,4 @@
-name: Build Flopcoin Wallet - Linux
+name: Build Flopcoin Wallet - Linux (Portable)
 
 on:
   push:
@@ -7,55 +7,41 @@ on:
 
 jobs:
   build-linux:
-    name: Build Linux (daemon + Qt GUI) - Portable
+    name: Build Linux (fully static with Qt)
     runs-on: ubuntu-22.04
-    env:
-      CC: gcc
-      CXX: g++
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install base build dependencies
+      - name: Install build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             build-essential libtool autotools-dev automake pkg-config \
-            bsdmainutils curl git
+            bsdmainutils curl git \
+            libssl-dev libboost-all-dev libdb++-dev libevent-dev \
+            libminiupnpc-dev protobuf-compiler libprotobuf-dev
 
-      - name: Build depends (static libraries including Qt)
+      - name: Build depends (with Qt)
         run: |
           cd depends
-          make -j$(nproc) NO_QT=0  # builds Qt and all other static libs
+          make -j$(nproc) QT_FORCE_STATIC=1
           cd ..
 
-      - name: Configure Flopcoin with depends Qt
+      - name: Configure with depends
         run: |
           ./autogen.sh
-          DEPENDS_NATIVE=$PWD/depends/x86_64-pc-linux-gnu/native
-          export QMAKE=$DEPENDS_NATIVE/bin/qmake
-          export PATH=$DEPENDS_NATIVE/bin:$PATH
-          export PKG_CONFIG_PATH=$DEPENDS_NATIVE/lib/pkgconfig
-          CONFIG_SITE=$PWD/depends/x86_64-pc-linux-gnu/share/config.site \
-          ./configure \
-            --prefix=/ \
-            --with-gui=qt5 \
-            --with-qt-bindir=$DEPENDS_NATIVE/bin \
-            --with-qt-incdir=$DEPENDS_NATIVE/include \
-            --with-qt-libdir=$DEPENDS_NATIVE/lib
+          CONFIG_SITE=$PWD/depends/x86_64-pc-linux-gnu/share/config.site ./configure \
+            --prefix=/ --with-gui=qt5
 
-      - name: Build Flopcoin (daemon + CLI + Qt GUI)
-        run: |
-          make -j$(nproc)
-          make -C src/qt -j$(nproc)   # ensures flopcoin-qt is built
+      - name: Build Flopcoin
+        run: make -j$(nproc)
 
-      - name: Package all binaries into one artifact
-        run: |
-          mkdir -p release
-          cp src/flopcoind src/flopcoin-cli src/flopcoin-tx src/qt/flopcoin-qt release/
-          tar -czvf flopcoin-linux-all.tar.gz -C release .
-
-      - name: Upload portable Linux artifact
+      - name: Upload Linux binaries (static)
         uses: actions/upload-artifact@v4
         with:
-          name: flopcoin-linux-all
-          path: flopcoin-linux-all.tar.gz
+          name: flopcoin-linux-portable
+          path: |
+            src/flopcoind
+            src/flopcoin-cli
+            src/flopcoin-tx
+            src/qt/flopcoin-qt
