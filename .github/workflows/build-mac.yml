@@ -1,4 +1,4 @@
-name: Build Flopcoin Wallet - macOS
+name: Build Flopcoin Wallet - macOS Universal
 
 on:
   push:
@@ -6,48 +6,85 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-macos:
-    name: Build macOS (daemon + Qt GUI)
+  build-macos-universal:
+    name: Build macOS (daemon + Qt GUI) - Universal
     runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [x86_64, arm64]
+
     steps:
       - uses: actions/checkout@v3
 
+      # Install dependencies
       - name: Install dependencies
         run: |
           brew update
-          brew install autoconf automake libtool pkg-config berkeley-db@4 libevent miniupnpc protobuf
-          brew install qt@5
-          brew install boost@1.76
+          brew install autoconf automake libtool pkg-config \
+                       openssl berkeley-db4 libevent qt@5 miniupnpc protobuf
+          brew unlink boost || true
+          brew install boost
 
+      # Set architecture environment
+      - name: Set architecture
+        run: |
+          echo "Building for ${{ matrix.arch }}"
+          export CFLAGS="-arch ${{ matrix.arch }}"
+          export CXXFLAGS="-arch ${{ matrix.arch }}"
+          export LDFLAGS="-arch ${{ matrix.arch }}"
+          export PKG_CONFIG_PATH="/opt/homebrew/opt/qt@5/lib/pkgconfig"
+          export QT_DIR="/opt/homebrew/opt/qt@5"
+          export PATH="$QT_DIR/bin:$PATH"
+          export BOOST_ROOT="$(brew --prefix boost)"
+          export BOOST_LIBRARYDIR="$BOOST_ROOT/lib"
+
+      # Build Flopcoin
       - name: Build Flopcoin
         run: |
-          # Paths
-          export OPENSSL_ROOT=$(brew --prefix openssl@3)
-          export BOOST_ROOT=$(brew --prefix boost@1.76)
-          export BDB_PREFIX=$(brew --prefix berkeley-db@4)
-          export QT_DIR=$(brew --prefix qt@5)
-
-          # Flags
-          export LDFLAGS="-L$BOOST_ROOT/lib -L$OPENSSL_ROOT/lib -L$BDB_PREFIX/lib"
-          export CPPFLAGS="-I$BOOST_ROOT/include -I$OPENSSL_ROOT/include -I$BDB_PREFIX/include"
-          export PKG_CONFIG_PATH="$BOOST_ROOT/lib/pkgconfig:$OPENSSL_ROOT/lib/pkgconfig"
-          export PATH="$QT_DIR/bin:$PATH"
-
           ./autogen.sh
-          ./configure \
-            --with-gui=qt5 \
-            --with-boost=$BOOST_ROOT \
-            --with-boost-libdir=$BOOST_ROOT/lib \
-            --with-bdb=$BDB_PREFIX \
-            --disable-tests --disable-bench
+          ./configure --prefix=/ --with-gui=qt5 \
+                      --with-boost=$BOOST_ROOT --with-boost-libdir=$BOOST_LIBRARYDIR \
+                      CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" LDFLAGS="$LDFLAGS"
           make -j$(sysctl -n hw.ncpu)
 
-      - name: Upload macOS binaries
+      # Upload architecture-specific binaries temporarily
+      - name: Upload architecture-specific binaries
         uses: actions/upload-artifact@v4
         with:
-          name: flopcoin-macos
+          name: flopcoin-macos-${{ matrix.arch }}
           path: |
             src/flopcoind
             src/flopcoin-cli
             src/flopcoin-tx
             src/qt/flopcoin-qt
+
+  # Merge x86_64 + arm64 into universal binary
+  merge-universal:
+    name: Create Universal macOS Binaries
+    runs-on: macos-latest
+    needs: build-macos-universal
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: flopcoin-macos-x86_64
+          path: x86_64
+      - uses: actions/download-artifact@v4
+        with:
+          name: flopcoin-macos-arm64
+          path: arm64
+
+      - name: Create universal binaries
+        run: |
+          mkdir -p universal
+          # Daemon + CLI + TX
+          lipo -create arm64/flopcoind x86_64/flopcoind -output universal/flopcoind
+          lipo -create arm64/flopcoin-cli x86_64/flopcoin-cli -output universal/flopcoin-cli
+          lipo -create arm64/flopcoin-tx x86_64/flopcoin-tx -output universal/flopcoin-tx
+          # Qt GUI
+          lipo -create arm64/qt/flopcoin-qt x86_64/qt/flopcoin-qt -output universal/flopcoin-qt
+
+      - name: Upload Universal macOS binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: flopcoin-macos-universal
+          path: universal/
