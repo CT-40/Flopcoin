@@ -6,37 +6,34 @@ on:
   workflow_dispatch:
 
 jobs:
+  # -------------------- Windows --------------------
   build-windows:
-    name: Build Windows (daemon + Qt GUI) - Fully Static
+    name: Build Windows (daemon + Qt GUI)
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install cross-compile toolchain
+      - name: Install build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             build-essential libtool autotools-dev automake pkg-config \
-            bsdmainutils curl git g++-mingw-w64-x86-64
+            bsdmainutils curl g++-mingw-w64-x86-64
 
-      - name: Build depends (Windows x86_64)
+      - name: Build depends (cross-compile for Windows)
         run: |
           cd depends
-          make HOST=x86_64-w64-mingw32 -j$(nproc) \
-            NO_QT=0    # ensure Qt gets built
+          make -j$(nproc) HOST=x86_64-w64-mingw32 NO_QT=0
           cd ..
 
-      - name: Configure for Windows (static)
+      - name: Configure (disable ZMQ, tests, and bench)
         run: |
           ./autogen.sh
           CONFIG_SITE=$PWD/depends/x86_64-w64-mingw32/share/config.site \
-          ./configure \
-            --prefix=/ \
-            --host=x86_64-w64-mingw32 \
-            --with-gui=qt5 \
-            LDFLAGS="-static"
+          ./configure --prefix=/ --host=x86_64-w64-mingw32 \
+            --disable-zmq --disable-tests --disable-bench
 
-      - name: Build Flopcoin (Windows)
+      - name: Build Flopcoin
         run: make -j$(nproc)
 
       - name: Upload Windows binaries
