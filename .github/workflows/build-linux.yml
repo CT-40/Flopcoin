@@ -25,24 +25,31 @@ jobs:
       - name: Build depends (static libraries incl. Qt)
         run: |
           cd depends
-          make -j$(nproc) NO_QT=0 # build Qt and all libs for portability
+          make -j$(nproc) NO_QT=0
           cd ..
 
       - name: Configure with depends
         run: |
           ./autogen.sh
+          # Ensure configure sees depends Qt
+          export PATH=$PWD/depends/x86_64-pc-linux-gnu/native/bin:$PATH
+          export PKG_CONFIG_PATH=$PWD/depends/x86_64-pc-linux-gnu/native/lib/pkgconfig
           CONFIG_SITE=$PWD/depends/x86_64-pc-linux-gnu/share/config.site \
           ./configure --prefix=/ --with-gui=qt5
 
-      - name: Build Flopcoin
-        run: make -j$(nproc)
+      - name: Build Flopcoin (daemon + CLI + Qt GUI)
+        run: |
+          make -j$(nproc)
+          make -C src/qt -j$(nproc)   # ensures flopcoin-qt is built
 
-      - name: Upload Linux wallet bundle
+      - name: Package all binaries
+        run: |
+          mkdir -p release
+          cp src/flopcoind src/flopcoin-cli src/flopcoin-tx src/qt/flopcoin-qt release/
+          tar -czvf flopcoin-linux-all.tar.gz -C release .
+
+      - name: Upload portable artifact
         uses: actions/upload-artifact@v4
         with:
-          name: flopcoin-linux
-          path: |
-            src/flopcoind
-            src/flopcoin-cli
-            src/flopcoin-tx
-            src/qt/flopcoin-qt
+          name: flopcoin-linux-all
+          path: flopcoin-linux-all.tar.gz
