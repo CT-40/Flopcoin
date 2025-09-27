@@ -10,21 +10,25 @@ jobs:
     name: Build Windows Static (daemon + Qt GUI)
     runs-on: ubuntu-22.04
     steps:
+      # Checkout source code
       - uses: actions/checkout@v3
 
-      - name: Install build dependencies
+      # Install cross-compilation dependencies
+      - name: Install build tools
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             build-essential libtool autotools-dev automake pkg-config \
-            bsdmainutils curl g++-mingw-w64-x86-64
+            bsdmainutils curl g++-mingw-w64-x86-64 git
 
-      - name: Build depends (cross-compile, static, no ZMQ)
+      # Build depends (cross-compile, static, Qt included, ZMQ skipped)
+      - name: Build depends (Windows x64, static)
         run: |
           cd depends
           make -j$(nproc) HOST=x86_64-w64-mingw32 NO_QT=0 NO_ZMQ=1 STATIC=1
           cd ..
 
+      # Configure Flopcoin with static linking and no ZMQ
       - name: Configure Flopcoin (static)
         run: |
           ./autogen.sh
@@ -33,10 +37,12 @@ jobs:
             --disable-shared --enable-static \
             --disable-zmq --disable-tests --disable-bench
 
+      # Build Flopcoin
       - name: Build Flopcoin
         run: make -j$(nproc)
 
-      - name: Upload Windows binaries (static)
+      # Upload all Windows binaries in one artifact
+      - name: Upload Windows static binaries
         uses: actions/upload-artifact@v4
         with:
           name: flopcoin-windows-static
