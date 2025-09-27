@@ -22,18 +22,18 @@ jobs:
             build-essential libtool autotools-dev automake pkg-config \
             bsdmainutils curl git
 
-      - name: Build depends (static libraries incl. Qt)
+      - name: Build depends (static libraries including Qt)
         run: |
           cd depends
-          make -j$(nproc) NO_QT=0
+          make -j$(nproc) NO_QT=0  # builds Qt and all other static libs
           cd ..
 
-      - name: Configure with depends
+      - name: Configure Flopcoin with depends Qt
         run: |
           ./autogen.sh
-          # Ensure configure sees depends Qt
           export PATH=$PWD/depends/x86_64-pc-linux-gnu/native/bin:$PATH
           export PKG_CONFIG_PATH=$PWD/depends/x86_64-pc-linux-gnu/native/lib/pkgconfig
+          export QMAKE=$PWD/depends/x86_64-pc-linux-gnu/native/bin/qmake
           CONFIG_SITE=$PWD/depends/x86_64-pc-linux-gnu/share/config.site \
           ./configure --prefix=/ --with-gui=qt5
 
@@ -42,13 +42,13 @@ jobs:
           make -j$(nproc)
           make -C src/qt -j$(nproc)   # ensures flopcoin-qt is built
 
-      - name: Package all binaries
+      - name: Package all binaries into one artifact
         run: |
           mkdir -p release
           cp src/flopcoind src/flopcoin-cli src/flopcoin-tx src/qt/flopcoin-qt release/
           tar -czvf flopcoin-linux-all.tar.gz -C release .
 
-      - name: Upload portable artifact
+      - name: Upload portable Linux artifact
         uses: actions/upload-artifact@v4
         with:
           name: flopcoin-linux-all
