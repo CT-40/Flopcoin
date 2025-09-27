@@ -1,4 +1,4 @@
-name: Build Flopcoin Wallet - Windows
+name: Build Flopcoin Wallet - Windows Static
 
 on:
   push:
@@ -6,9 +6,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  # -------------------- Windows --------------------
-  build-windows:
-    name: Build Windows (daemon + Qt GUI)
+  build-windows-static:
+    name: Build Windows Static (daemon + Qt GUI)
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
@@ -20,26 +19,27 @@ jobs:
             build-essential libtool autotools-dev automake pkg-config \
             bsdmainutils curl g++-mingw-w64-x86-64
 
-      - name: Build depends (cross-compile for Windows)
+      - name: Build depends (cross-compile, static, no ZMQ)
         run: |
           cd depends
-          make -j$(nproc) HOST=x86_64-w64-mingw32 NO_QT=0
+          make -j$(nproc) HOST=x86_64-w64-mingw32 NO_QT=0 NO_ZMQ=1 STATIC=1
           cd ..
 
-      - name: Configure (disable ZMQ, tests, and bench)
+      - name: Configure Flopcoin (static)
         run: |
           ./autogen.sh
           CONFIG_SITE=$PWD/depends/x86_64-w64-mingw32/share/config.site \
           ./configure --prefix=/ --host=x86_64-w64-mingw32 \
+            --disable-shared --enable-static \
             --disable-zmq --disable-tests --disable-bench
 
       - name: Build Flopcoin
         run: make -j$(nproc)
 
-      - name: Upload Windows binaries
+      - name: Upload Windows binaries (static)
         uses: actions/upload-artifact@v4
         with:
-          name: flopcoin-windows
+          name: flopcoin-windows-static
           path: |
             src/flopcoind.exe
             src/flopcoin-cli.exe
