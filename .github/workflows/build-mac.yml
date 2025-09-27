@@ -1,4 +1,4 @@
-name: Build Flopcoin Wallet -MAC
+name: Build Flopcoin Wallet - macOS
 
 on:
   push:
@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  # -------------------- macOS --------------------
   build-macos:
     name: Build macOS (daemon + Qt GUI)
     runs-on: macos-latest
@@ -16,32 +15,39 @@ jobs:
       - name: Install dependencies
         run: |
           brew update
-          brew install autoconf automake libtool boost openssl berkeley-db4 pkg-config libevent qt@5 miniupnpc protobuf
+          brew install autoconf automake libtool pkg-config berkeley-db@4 libevent miniupnpc protobuf
+          brew install qt@5
+          brew install boost@1.76
 
       - name: Build Flopcoin
         run: |
-          export BOOST_ROOT=$(brew --prefix boost)
-          export BOOST_INCLUDEDIR=$BOOST_ROOT/include
-          export BOOST_LIBRARYDIR=$BOOST_ROOT/lib
-          export OPENSSL_ROOT=$(brew --prefix openssl)
-          export LDFLAGS="-L$BOOST_LIBRARYDIR -L$OPENSSL_ROOT/lib"
-          export CPPFLAGS="-I$BOOST_INCLUDEDIR -I$OPENSSL_ROOT/include"
-          export PKG_CONFIG_PATH="$BOOST_LIBRARYDIR/pkgconfig:$OPENSSL_ROOT/lib/pkgconfig"
+          # Paths
+          export OPENSSL_ROOT=$(brew --prefix openssl@3)
+          export BOOST_ROOT=$(brew --prefix boost@1.76)
+          export BDB_PREFIX=$(brew --prefix berkeley-db@4)
           export QT_DIR=$(brew --prefix qt@5)
+
+          # Flags
+          export LDFLAGS="-L$BOOST_ROOT/lib -L$OPENSSL_ROOT/lib -L$BDB_PREFIX/lib"
+          export CPPFLAGS="-I$BOOST_ROOT/include -I$OPENSSL_ROOT/include -I$BDB_PREFIX/include"
+          export PKG_CONFIG_PATH="$BOOST_ROOT/lib/pkgconfig:$OPENSSL_ROOT/lib/pkgconfig"
           export PATH="$QT_DIR/bin:$PATH"
 
           ./autogen.sh
-          ./configure --with-gui=qt5 --with-boost=$BOOST_ROOT --with-boost-libdir=$BOOST_LIBRARYDIR
+          ./configure \
+            --with-gui=qt5 \
+            --with-boost=$BOOST_ROOT \
+            --with-boost-libdir=$BOOST_ROOT/lib \
+            --with-bdb=$BDB_PREFIX \
+            --disable-tests --disable-bench
           make -j$(sysctl -n hw.ncpu)
 
-      - name: Upload macOS daemon
+      - name: Upload macOS binaries
         uses: actions/upload-artifact@v4
         with:
           name: flopcoin-macos
-          path: src/flopcoind
-
-      - name: Upload macOS Qt GUI
-        uses: actions/upload-artifact@v4
-        with:
-          name: flopcoin-qt-macos
-          path: src/qt/flopcoin-qt
+          path: |
+            src/flopcoind
+            src/flopcoin-cli
+            src/flopcoin-tx
+            src/qt/flopcoin-qt
