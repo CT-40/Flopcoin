@@ -9,39 +9,49 @@ jobs:
   build-windows-static:
     name: Build Windows Static (daemon + Qt GUI)
     runs-on: ubuntu-22.04
+    env:
+      HOST: x86_64-w64-mingw32
     steps:
-      # Checkout source code
+      # 1. Checkout source
       - uses: actions/checkout@v3
 
-      # Install cross-compilation dependencies
+      # 2. Install cross-compilation dependencies
       - name: Install build tools
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             build-essential libtool autotools-dev automake pkg-config \
-            bsdmainutils curl g++-mingw-w64-x86-64 git
+            bsdmainutils curl git g++-mingw-w64-x86-64 mingw-w64 \
+            qt5-qmake qtbase5-dev qttools5-dev qttools5-dev-tools \
+            libssl-dev libboost-all-dev libdb++-dev libevent-dev \
+            protobuf-compiler libprotobuf-dev
 
-      # Build depends (cross-compile, static, Qt included, ZMQ skipped)
+      # 3. Build depends for Windows (static, Qt included, ZMQ skipped)
       - name: Build depends (Windows x64, static)
         run: |
           cd depends
-          make -j$(nproc) HOST=x86_64-w64-mingw32 NO_QT=0 NO_ZMQ=1 STATIC=1
+          make -j$(nproc) HOST=$HOST NO_QT=0 NO_ZMQ=1 STATIC=1
           cd ..
 
-      # Configure Flopcoin with static linking and no ZMQ
+      # 4. Add cross-compiled Qt to PATH for configure
+      - name: Setup Qt for cross-compile
+        run: |
+          export PATH=$PWD/depends/$HOST/qt5-static/bin:$PATH
+
+      # 5. Configure Flopcoin for static Windows build
       - name: Configure Flopcoin (static)
         run: |
           ./autogen.sh
-          CONFIG_SITE=$PWD/depends/x86_64-w64-mingw32/share/config.site \
-          ./configure --prefix=/ --host=x86_64-w64-mingw32 \
-            --disable-shared --enable-static \
+          CONFIG_SITE=$PWD/depends/$HOST/share/config.site \
+          ./configure --prefix=/ --host=$HOST \
+            --with-gui=qt5 --disable-shared --enable-static \
             --disable-zmq --disable-tests --disable-bench
 
-      # Build Flopcoin
+      # 6. Build Flopcoin
       - name: Build Flopcoin
         run: make -j$(nproc)
 
-      # Upload all Windows binaries in one artifact
+      # 7. Upload all Windows binaries as a single artifact
       - name: Upload Windows static binaries
         uses: actions/upload-artifact@v4
         with:
