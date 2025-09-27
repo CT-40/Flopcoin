@@ -6,28 +6,45 @@ on:
   workflow_dispatch:
 
 jobs:
-  # -------------------- Windows --------------------
   build-windows:
-    name: Build Windows (daemon + Qt GUI)
-    runs-on: windows-latest
+    name: Build Windows (daemon + Qt GUI) - Fully Static
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
-      - name: Setup Visual Studio
-        uses: microsoft/setup-msbuild@v1
-      - name: Install vcpkg and dependencies
+
+      - name: Install cross-compile toolchain
         run: |
-          git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
-          C:\vcpkg\bootstrap-vcpkg.bat
-          C:\vcpkg\vcpkg install boost:x64-windows openssl:x64-windows qt5:x64-windows miniupnpc:x64-windows
-      - name: Build Flopcoin
-        run: msbuild src\flopcoin.sln /p:Configuration=Release
-      - name: Upload Windows daemon
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential libtool autotools-dev automake pkg-config \
+            bsdmainutils curl git g++-mingw-w64-x86-64
+
+      - name: Build depends (Windows x86_64)
+        run: |
+          cd depends
+          make HOST=x86_64-w64-mingw32 -j$(nproc) \
+            NO_QT=0    # ensure Qt gets built
+          cd ..
+
+      - name: Configure for Windows (static)
+        run: |
+          ./autogen.sh
+          CONFIG_SITE=$PWD/depends/x86_64-w64-mingw32/share/config.site \
+          ./configure \
+            --prefix=/ \
+            --host=x86_64-w64-mingw32 \
+            --with-gui=qt5 \
+            LDFLAGS="-static"
+
+      - name: Build Flopcoin (Windows)
+        run: make -j$(nproc)
+
+      - name: Upload Windows binaries
         uses: actions/upload-artifact@v4
         with:
           name: flopcoin-windows
-          path: src\Release\flopcoind.exe
-      - name: Upload Windows Qt GUI
-        uses: actions/upload-artifact@v4
-        with:
-          name: flopcoin-qt-windows
-          path: src\Release\flopcoin-qt.exe
+          path: |
+            src/flopcoind.exe
+            src/flopcoin-cli.exe
+            src/flopcoin-tx.exe
+            src/qt/flopcoin-qt.exe
