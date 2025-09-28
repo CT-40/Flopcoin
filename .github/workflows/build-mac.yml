@@ -7,7 +7,6 @@ on:
 
 jobs:
   build-macos:
-    name: Build macOS (daemon + Qt GUI)
     runs-on: macos-latest
 
     steps:
@@ -20,23 +19,33 @@ jobs:
                        qt@5 zeromq qrencode librsvg boost berkeley-db@5 libevent
           brew link protobuf@21
 
+      # 🔍 Debug step: show where Boost and its libraries are installed
+      - name: Debug Boost installation
+        run: |
+          echo "BOOST PREFIX: $(brew --prefix boost)"
+          ls -R $(brew --prefix boost) || true
+          ls -l $(brew --prefix boost)/lib | grep boost_system || true
+
       - name: Configure & Build
         run: |
           BOOST_ROOT=$(brew --prefix boost)
+          BOOST_INCLUDEDIR=$BOOST_ROOT/include
+          BOOST_LIBDIR=$BOOST_ROOT/lib
+
           OPENSSL_ROOT=$(brew --prefix openssl)
           QT_DIR=$(brew --prefix qt@5)
 
-          export LDFLAGS="-L$BOOST_ROOT/lib -L$OPENSSL_ROOT/lib"
-          export CPPFLAGS="-I$BOOST_ROOT/include -I$OPENSSL_ROOT/include"
+          export CPPFLAGS="-I$BOOST_INCLUDEDIR -I$OPENSSL_ROOT/include"
+          export LDFLAGS="-L$BOOST_LIBDIR -L$OPENSSL_ROOT/lib"
           export PKG_CONFIG_PATH="$QT_DIR/lib/pkgconfig:$OPENSSL_ROOT/lib/pkgconfig"
-
           export PATH="$QT_DIR/bin:$PATH"
 
           ./autogen.sh
-          ./configure --with-gui=qt5 \
-                      --with-boost=$BOOST_ROOT \
-                      --with-boost-libdir=$BOOST_ROOT/lib \
-                      --disable-tests --disable-bench
+          ./configure \
+            --with-gui=qt5 \
+            --with-boost=$BOOST_ROOT \
+            --with-boost-libdir=$BOOST_LIBDIR \
+            --disable-tests --disable-bench
           make -j$(sysctl -n hw.ncpu)
 
       - name: Upload macOS daemon
