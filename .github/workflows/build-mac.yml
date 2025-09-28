@@ -1,45 +1,59 @@
-name: macOS Build
+name: Build Flopcoin Wallet - macOS
 
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: macos-14
+  build-macos:
+    name: Build macOS (daemon + Qt GUI)
+    runs-on: macos-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      # 1️⃣ Checkout source code
+      - uses: actions/checkout@v3
 
-      - name: Install dependencies
+      # 2️⃣ Install dependencies
+      - name: Install dependencies via Homebrew
         run: |
           brew update
-          brew install boost@1.83 qt@5 berkeley-db@4 automake libtool pkg-config gnu-tar
+          brew install autoconf automake libtool miniupnpc openssl pkg-config protobuf@21 \
+                       qt@5 zeromq qrencode librsvg boost berkeley-db@5 libevent
+          brew link --force protobuf@21
+          export PATH="/opt/homebrew/opt/qt@5/bin:$PATH"
 
-          # Force macOS to use correct Qt and Boost paths
-          echo 'export PATH="/opt/homebrew/opt/qt@5/bin:$PATH"' >> $GITHUB_ENV
-          echo 'export PKG_CONFIG_PATH="/opt/homebrew/opt/qt@5/lib/pkgconfig:$PKG_CONFIG_PATH"' >> $GITHUB_ENV
-          echo 'export LDFLAGS="-L/opt/homebrew/opt/boost@1.83/lib -L/opt/homebrew/opt/berkeley-db@4/lib"' >> $GITHUB_ENV
-          echo 'export CPPFLAGS="-I/opt/homebrew/opt/boost@1.83/include -I/opt/homebrew/opt/berkeley-db@4/include"' >> $GITHUB_ENV
-          echo 'export CC="clang"' >> $GITHUB_ENV
-          echo 'export CXX="clang++"' >> $GITHUB_ENV
+      # 3️⃣ Set environment variables for Boost & OpenSSL
+      - name: Set environment variables
+        run: |
+          export BOOST_ROOT=$(brew --prefix boost)
+          export BOOST_INCLUDEDIR=$BOOST_ROOT/include
+          export BOOST_LIBRARYDIR=$BOOST_ROOT/lib
+          export OPENSSL_ROOT=$(brew --prefix openssl)
+          export LDFLAGS="-L$BOOST_LIBRARYDIR -L$OPENSSL_ROOT/lib"
+          export CPPFLAGS="-I$BOOST_INCLUDEDIR -I$OPENSSL_ROOT/include"
+          export PKG_CONFIG_PATH="$BOOST_LIBRARYDIR/pkgconfig:$OPENSSL_ROOT/lib/pkgconfig"
+          export PATH="$BOOST_ROOT/bin:$PATH"
 
-      - name: Build Flopcoin Core
+      # 4️⃣ Autogen + Configure
+      - name: Autogen and Configure
         run: |
           ./autogen.sh
-          ./configure --with-gui=qt5 --with-boost=/opt/homebrew/opt/boost@1.83 --with-incompatible-bdb
-          make -j$(sysctl -n hw.logicalcpu)
+          ./configure --with-gui=qt5 --with-boost=$BOOST_ROOT --with-boost-libdir=$BOOST_LIBRARYDIR
 
-      - name: Package
-        run: |
-          make install DESTDIR=$PWD/dest
-          tar -czf flopcoin-macos.tar.gz -C dest .
+      # 5️⃣ Build
+      - name: Build Flopcoin
+        run: make -j$(sysctl -n hw.ncpu)
 
-      - name: Upload artifact
+      # 6️⃣ Upload binaries
+      - name: Upload macOS daemon
         uses: actions/upload-artifact@v4
         with:
           name: flopcoin-macos
-          path: flopcoin-macos.tar.gz
+          path: src/flopcoind
+
+      - name: Upload macOS Qt GUI
+        uses: actions/upload-artifact@v4
+        with:
+          name: flopcoin-qt-macos
+          path: src/qt/flopcoin-qt
