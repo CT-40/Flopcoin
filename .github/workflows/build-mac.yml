@@ -19,24 +19,19 @@ jobs:
                        qt@5 zeromq qrencode librsvg boost berkeley-db@5 libevent
           brew link protobuf@21
 
-      # 🔍 Debug step: show where Boost and its libraries are installed
-      - name: Debug Boost installation
+      - name: Debug Boost install
         run: |
           echo "BOOST PREFIX: $(brew --prefix boost)"
-          ls -R $(brew --prefix boost) || true
           ls -l $(brew --prefix boost)/lib | grep boost_system || true
 
       - name: Configure & Build
         run: |
           BOOST_ROOT=$(brew --prefix boost)
-          BOOST_INCLUDEDIR=$BOOST_ROOT/include
-          BOOST_LIBDIR=$BOOST_ROOT/lib
-
           OPENSSL_ROOT=$(brew --prefix openssl)
           QT_DIR=$(brew --prefix qt@5)
 
-          export CPPFLAGS="-I$BOOST_INCLUDEDIR -I$OPENSSL_ROOT/include"
-          export LDFLAGS="-L$BOOST_LIBDIR -L$OPENSSL_ROOT/lib"
+          export CPPFLAGS="-I$BOOST_ROOT/include -I$OPENSSL_ROOT/include"
+          export LDFLAGS="-L$BOOST_ROOT/lib -L$OPENSSL_ROOT/lib -lboost_system"
           export PKG_CONFIG_PATH="$QT_DIR/lib/pkgconfig:$OPENSSL_ROOT/lib/pkgconfig"
           export PATH="$QT_DIR/bin:$PATH"
 
@@ -44,18 +39,14 @@ jobs:
           ./configure \
             --with-gui=qt5 \
             --with-boost=$BOOST_ROOT \
-            --with-boost-libdir=$BOOST_LIBDIR \
+            --with-boost-libdir=$BOOST_ROOT/lib \
             --disable-tests --disable-bench
           make -j$(sysctl -n hw.ncpu)
 
-      - name: Upload macOS daemon
+      - name: Upload macOS binaries
         uses: actions/upload-artifact@v4
         with:
-          name: flopcoind-macos
-          path: src/flopcoind
-
-      - name: Upload macOS Qt GUI
-        uses: actions/upload-artifact@v4
-        with:
-          name: flopcoin-qt-macos
-          path: src/qt/flopcoin-qt
+          name: flopcoin-macos
+          path: |
+            src/flopcoind
+            src/qt/flopcoin-qt
