@@ -11,41 +11,36 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      # 1️⃣ Checkout source code
       - uses: actions/checkout@v3
 
-      # 2️⃣ Install dependencies
       - name: Install dependencies via Homebrew
         run: |
           brew update
           brew install autoconf automake libtool miniupnpc openssl pkg-config protobuf@21 \
                        qt@5 zeromq qrencode librsvg boost berkeley-db@5 libevent
           brew link --force protobuf@21
-          export PATH="/opt/homebrew/opt/qt@5/bin:$PATH"
+          export PATH="$(brew --prefix qt@5)/bin:$PATH"
 
-      # 3️⃣ Set environment variables for Boost & OpenSSL
-      - name: Set environment variables
+      - name: Diagnose Boost
         run: |
-          export BOOST_ROOT=$(brew --prefix boost)
-          export BOOST_INCLUDEDIR=$BOOST_ROOT/include
-          export BOOST_LIBRARYDIR=$BOOST_ROOT/lib
-          export OPENSSL_ROOT=$(brew --prefix openssl)
-          export LDFLAGS="-L$BOOST_LIBRARYDIR -L$OPENSSL_ROOT/lib"
-          export CPPFLAGS="-I$BOOST_INCLUDEDIR -I$OPENSSL_ROOT/include"
-          export PKG_CONFIG_PATH="$BOOST_LIBRARYDIR/pkgconfig:$OPENSSL_ROOT/lib/pkgconfig"
-          export PATH="$BOOST_ROOT/bin:$PATH"
+          BOOST_PREFIX=$(brew --prefix boost)
+          echo "Boost prefix: $BOOST_PREFIX"
+          echo "Listing Boost libraries:"
+          ls -lh $BOOST_PREFIX/lib | grep boost || echo "⚠️ No Boost libs found!"
 
-      # 4️⃣ Autogen + Configure
       - name: Autogen and Configure
         run: |
+          BOOST_PREFIX=$(brew --prefix boost)
+          BOOST_LIBDIR="$BOOST_PREFIX/lib"
+          echo "Using Boost from: $BOOST_PREFIX"
           ./autogen.sh
-          ./configure --with-gui=qt5 --with-boost=$BOOST_ROOT --with-boost-libdir=$BOOST_LIBRARYDIR
+          ./configure --with-gui=qt5 \
+                      --with-boost=$BOOST_PREFIX \
+                      --with-boost-libdir=$BOOST_LIBDIR
 
-      # 5️⃣ Build
       - name: Build Flopcoin
         run: make -j$(sysctl -n hw.ncpu)
 
-      # 6️⃣ Upload binaries
       - name: Upload macOS daemon
         uses: actions/upload-artifact@v4
         with:
