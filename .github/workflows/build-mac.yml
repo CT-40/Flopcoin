@@ -1,40 +1,80 @@
-name: Build Flopcoin Wallet - macOS
+name: macOS Build
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
   workflow_dispatch:
 
 jobs:
   build-macos:
-    name: Build macOS (daemon + Qt GUI)
     runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v3
+    strategy:
+      matrix:
+        arch: [x86_64, arm64]
 
-      - name: Install dependencies (brew)
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Homebrew
+        run: |
+          echo "HOMEBREW_NO_AUTO_UPDATE=1" >> $GITHUB_ENV
+
+      - name: Install dependencies
         run: |
           brew update
           brew install autoconf automake libtool miniupnpc openssl pkg-config protobuf@21 \
-                       qt@5 zeromq qrencode librsvg boost berkeley-db@5 libevent
+                       qt5 zeromq qrencode librsvg boost berkeley-db@5 libevent create-dmg
           brew link protobuf@21
-          # Ensure Qt5 binaries are in PATH
-          echo "$(brew --prefix qt@5)/bin" >> $GITHUB_PATH
 
-      - name: Configure and Build Flopcoin
+      - name: Export Boost + flags
         run: |
-          ./autogen.sh
-          ./configure --with-gui=qt5 --with-boost=$(brew --prefix boost)
-          make -j$(sysctl -n hw.ncpu)
+          BOOST_PREFIX=$(brew --prefix boost)
+          echo "BOOST_ROOT=$BOOST_PREFIX" >> $GITHUB_ENV
+          echo "BOOST_INCLUDEDIR=$BOOST_PREFIX/include" >> $GITHUB_ENV
+          echo "BOOST_LIBRARYDIR=$BOOST_PREFIX/lib" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I$(brew --prefix)/include" >> $GITHUB_ENV
+          echo "LDFLAGS=-L$(brew --prefix)/lib" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=$(brew --prefix qt5)/lib/pkgconfig" >> $GITHUB_ENV
+          echo "CMAKE_PREFIX_PATH=$(brew --prefix qt5)" >> $GITHUB_ENV
 
-      - name: Upload macOS daemon
+      - name: Run autogen
+        run: ./autogen.sh
+
+      - name: Configure
+        run: |
+          ./configure \
+            --with-gui=qt5 \
+            --with-boost=$BOOST_ROOT \
+            --with-boost-libdir=$BOOST_LIBRARYDIR
+
+      - name: Build
+        run: make -j$(sysctl -n hw.ncpu)
+
+      - name: Upload raw binary
         uses: actions/upload-artifact@v4
         with:
-          name: flopcoin-macos-daemon
-          path: src/flopcoind
-
-      - name: Upload macOS Qt GUI
-        uses: actions/upload-artifact@v4
-        with:
-          name: flopcoin-macos-gui
+          name: flopcoin-qt-${{ matrix.arch }}
           path: src/qt/flopcoin-qt
+
+      - name: Create DMG
+        run: |
+          mkdir -p dist
+          cp src/qt/flopcoin-qt dist/
+          create-dmg \
+            --volname "Flopcoin Core" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon "flopcoin-qt" 200 190 \
+            --hide-extension "flopcoin-qt" \
+            --app-drop-link 600 185 \
+            "Flopcoin-Core-${{ matrix.arch }}.dmg" \
+            dist/
+
+      - name: Upload DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: flopcoin-core-dmg-${{ matrix.arch }}
+          path: Flopcoin-Core-${{ matrix.arch }}.dmg
