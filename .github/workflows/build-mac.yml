@@ -1,52 +1,45 @@
-name: Build Flopcoin Wallet - macOS
+name: macOS Build
 
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  build-macos:
-    runs-on: macos-latest
+  build:
+    runs-on: macos-14
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
           brew update
-          brew install autoconf automake libtool miniupnpc openssl pkg-config protobuf@21 \
-                       qt@5 zeromq qrencode librsvg boost berkeley-db@5 libevent
-          brew link protobuf@21
+          brew install boost@1.83 qt@5 berkeley-db@4 automake libtool pkg-config gnu-tar
 
-      - name: Debug Boost install
+          # Force macOS to use correct Qt and Boost paths
+          echo 'export PATH="/opt/homebrew/opt/qt@5/bin:$PATH"' >> $GITHUB_ENV
+          echo 'export PKG_CONFIG_PATH="/opt/homebrew/opt/qt@5/lib/pkgconfig:$PKG_CONFIG_PATH"' >> $GITHUB_ENV
+          echo 'export LDFLAGS="-L/opt/homebrew/opt/boost@1.83/lib -L/opt/homebrew/opt/berkeley-db@4/lib"' >> $GITHUB_ENV
+          echo 'export CPPFLAGS="-I/opt/homebrew/opt/boost@1.83/include -I/opt/homebrew/opt/berkeley-db@4/include"' >> $GITHUB_ENV
+          echo 'export CC="clang"' >> $GITHUB_ENV
+          echo 'export CXX="clang++"' >> $GITHUB_ENV
+
+      - name: Build Flopcoin Core
         run: |
-          echo "BOOST PREFIX: $(brew --prefix boost)"
-          ls -l $(brew --prefix boost)/lib | grep boost_system || true
-
-      - name: Configure & Build
-        run: |
-          BOOST_ROOT=$(brew --prefix boost)
-          OPENSSL_ROOT=$(brew --prefix openssl)
-          QT_DIR=$(brew --prefix qt@5)
-
-          export CPPFLAGS="-I$BOOST_ROOT/include -I$OPENSSL_ROOT/include"
-          export LDFLAGS="-L$BOOST_ROOT/lib -L$OPENSSL_ROOT/lib -lboost_system"
-          export PKG_CONFIG_PATH="$QT_DIR/lib/pkgconfig:$OPENSSL_ROOT/lib/pkgconfig"
-          export PATH="$QT_DIR/bin:$PATH"
-
           ./autogen.sh
-          ./configure \
-            --with-gui=qt5 \
-            --with-boost=$BOOST_ROOT \
-            --with-boost-libdir=$BOOST_ROOT/lib \
-            --disable-tests --disable-bench
-          make -j$(sysctl -n hw.ncpu)
+          ./configure --with-gui=qt5 --with-boost=/opt/homebrew/opt/boost@1.83 --with-incompatible-bdb
+          make -j$(sysctl -n hw.logicalcpu)
 
-      - name: Upload macOS binaries
+      - name: Package
+        run: |
+          make install DESTDIR=$PWD/dest
+          tar -czf flopcoin-macos.tar.gz -C dest .
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: flopcoin-macos
-          path: |
-            src/flopcoind
-            src/qt/flopcoin-qt
+          path: flopcoin-macos.tar.gz
