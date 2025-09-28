@@ -15,12 +15,7 @@ jobs:
         arch: [x86_64, arm64]
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Set up Homebrew
-        run: |
-          echo "HOMEBREW_NO_AUTO_UPDATE=1" >> $GITHUB_ENV
+      - uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
@@ -29,18 +24,22 @@ jobs:
                        qt5 zeromq qrencode librsvg boost berkeley-db@5 libevent create-dmg
           brew link protobuf@21
 
-      - name: Export Boost + flags
+      - name: Set environment
         run: |
           BOOST_PREFIX=$(brew --prefix boost)
+          OPENSSL_PREFIX=$(brew --prefix openssl)
+          QT_PREFIX=$(brew --prefix qt5)
+
           echo "BOOST_ROOT=$BOOST_PREFIX" >> $GITHUB_ENV
           echo "BOOST_INCLUDEDIR=$BOOST_PREFIX/include" >> $GITHUB_ENV
           echo "BOOST_LIBRARYDIR=$BOOST_PREFIX/lib" >> $GITHUB_ENV
-          echo "CPPFLAGS=-I$(brew --prefix)/include" >> $GITHUB_ENV
-          echo "LDFLAGS=-L$(brew --prefix)/lib" >> $GITHUB_ENV
-          echo "PKG_CONFIG_PATH=$(brew --prefix qt5)/lib/pkgconfig" >> $GITHUB_ENV
-          echo "CMAKE_PREFIX_PATH=$(brew --prefix qt5)" >> $GITHUB_ENV
+          echo "OPENSSL_ROOT=$OPENSSL_PREFIX" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I$BOOST_PREFIX/include -I$OPENSSL_PREFIX/include" >> $GITHUB_ENV
+          echo "LDFLAGS=-L$BOOST_PREFIX/lib -L$OPENSSL_PREFIX/lib" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=$QT_PREFIX/lib/pkgconfig" >> $GITHUB_ENV
+          echo "PATH=$QT_PREFIX/bin:$PATH" >> $GITHUB_ENV
 
-      - name: Run autogen
+      - name: Autogen
         run: ./autogen.sh
 
       - name: Configure
@@ -48,33 +47,40 @@ jobs:
           ./configure \
             --with-gui=qt5 \
             --with-boost=$BOOST_ROOT \
-            --with-boost-libdir=$BOOST_LIBRARYDIR
+            --with-boost-libdir=$BOOST_LIBRARYDIR \
+            --with-openssl=$OPENSSL_ROOT \
+            PKG_CONFIG_PATH=$PKG_CONFIG_PATH \
+            CPPFLAGS="$CPPFLAGS" \
+            LDFLAGS="$LDFLAGS"
 
       - name: Build
         run: make -j$(sysctl -n hw.ncpu)
 
-      - name: Upload raw binary
+      - name: Upload flopcoind
+        uses: actions/upload-artifact@v4
+        with:
+          name: flopcoind-${{ matrix.arch }}
+          path: src/flopcoind
+
+      - name: Upload flopcoin-qt
         uses: actions/upload-artifact@v4
         with:
           name: flopcoin-qt-${{ matrix.arch }}
           path: src/qt/flopcoin-qt
 
-      - name: Create DMG
+      - name: Create DMG (Qt GUI)
         run: |
-          mkdir -p dist
-          cp src/qt/flopcoin-qt dist/
+          mkdir -p release
+          cp src/qt/flopcoin-qt release/Flopcoin-Qt.app
           create-dmg \
-            --volname "Flopcoin Core" \
-            --window-pos 200 120 \
-            --window-size 800 400 \
-            --icon "flopcoin-qt" 200 190 \
-            --hide-extension "flopcoin-qt" \
-            --app-drop-link 600 185 \
-            "Flopcoin-Core-${{ matrix.arch }}.dmg" \
-            dist/
+            --volname "Flopcoin" \
+            --window-size 500 300 \
+            --icon-size 100 \
+            --app-drop-link 300 200 \
+            release/Flopcoin-Qt.dmg release/Flopcoin-Qt.app
 
       - name: Upload DMG
         uses: actions/upload-artifact@v4
         with:
-          name: flopcoin-core-dmg-${{ matrix.arch }}
-          path: Flopcoin-Core-${{ matrix.arch }}.dmg
+          name: flopcoin-qt-dmg-${{ matrix.arch }}
+          path: release/Flopcoin-Qt.dmg
