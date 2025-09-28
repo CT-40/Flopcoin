@@ -1,71 +1,53 @@
-name: Build Flopcoin Wallet - macOS
+name: macOS Build
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+  pull_request:
 
 jobs:
   build-macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install dependencies (brew)
         run: |
           brew update
+          brew install autoconf automake libtool pkg-config \
+                       miniupnpc openssl protobuf@21 qt@5 zeromq qrencode \
+                       librsvg boost berkeley-db@5 libevent
 
-          # Prefer Boost 1.83 if available, fallback to latest (1.84+)
-          if brew info boost@1.83 &>/dev/null; then
-            brew install boost@1.83
-            BOOST_PREFIX=$(brew --prefix boost@1.83)
-          else
-            brew install boost
-            BOOST_PREFIX=$(brew --prefix boost)
-          fi
-
-          brew install autoconf automake libtool miniupnpc openssl pkg-config protobuf@21 \
-                       qt@5 zeromq qrencode librsvg berkeley-db@5 libevent create-dmg
+          # Force link protobuf (needed for bitcoin-like builds)
           brew link protobuf@21
 
-          echo "BOOST_PREFIX=$BOOST_PREFIX" >> $GITHUB_ENV
-          echo "OPENSSL_PREFIX=$(brew --prefix openssl)" >> $GITHUB_ENV
-          echo "QT_PREFIX=$(brew --prefix qt@5)" >> $GITHUB_ENV
-
-      - name: Set environment
+      - name: Configure Boost env
         run: |
-          echo "CPPFLAGS=-I$BOOST_PREFIX/include -I$OPENSSL_PREFIX/include" >> $GITHUB_ENV
-          echo "LDFLAGS=-L$BOOST_PREFIX/lib -L$OPENSSL_PREFIX/lib" >> $GITHUB_ENV
-          echo "PKG_CONFIG_PATH=$QT_PREFIX/lib/pkgconfig" >> $GITHUB_ENV
-          echo "PATH=$QT_PREFIX/bin:$PATH" >> $GITHUB_ENV
+          # Homebrew boost paths (Intel vs Apple Silicon)
+          BOOST_ROOT_INTEL=/usr/local/opt/boost
+          BOOST_ROOT_ARM=/opt/homebrew/opt/boost
 
-      - name: Autogen
-        run: ./autogen.sh
+          if [ -d "$BOOST_ROOT_ARM" ]; then
+            export BOOST_ROOT=$BOOST_ROOT_ARM
+          else
+            export BOOST_ROOT=$BOOST_ROOT_INTEL
+          fi
 
-      - name: Configure
+          export BOOST_CPPFLAGS="-I$BOOST_ROOT/include"
+          export BOOST_LDFLAGS="-L$BOOST_ROOT/lib"
+
+          echo "BOOST_CPPFLAGS=$BOOST_CPPFLAGS" >> $GITHUB_ENV
+          echo "BOOST_LDFLAGS=$BOOST_LDFLAGS" >> $GITHUB_ENV
+
+      - name: Build Flopcoin
         run: |
-          ./configure \
-            --with-gui=qt5 \
-            --with-boost=$BOOST_PREFIX \
-            --with-boost-libdir=$BOOST_PREFIX/lib \
-            --with-openssl=$OPENSSL_PREFIX \
-            BOOST_CPPFLAGS="-I$BOOST_PREFIX/include" \
-            BOOST_LDFLAGS="-L$BOOST_PREFIX/lib" \
-            PKG_CONFIG_PATH=$PKG_CONFIG_PATH \
-            CPPFLAGS="$CPPFLAGS" \
-            LDFLAGS="$LDFLAGS"
+          ./autogen.sh
+          ./configure --with-gui=qt5 \
+            BOOST_CPPFLAGS="$BOOST_CPPFLAGS" BOOST_LDFLAGS="$BOOST_LDFLAGS"
+          make -j$(sysctl -n hw.ncpu)
 
-      - name: Build
-        run: make -j$(sysctl -n hw.ncpu)
-
-      - name: Upload flopcoind
+      - name: Package artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: flopcoind-macos
-          path: src/flopcoind
-
-      - name: Upload flopcoin-qt
-        uses: actions/upload-artifact@v4
-        with:
-          name: flopcoin-qt-macos
-          path: src/qt/flopcoin-qt
+          name: flopcoin-macos
+          path: src/{flopcoin-qt,flopcoind}
