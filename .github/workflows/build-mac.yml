@@ -18,25 +18,22 @@ jobs:
           # Prefer Boost 1.83 if available, fallback to latest (1.84+)
           if brew info boost@1.83 &>/dev/null; then
             brew install boost@1.83
-            brew link boost@1.83 --force
+            BOOST_PREFIX=$(brew --prefix boost@1.83)
           else
             brew install boost
-            brew link boost --force
+            BOOST_PREFIX=$(brew --prefix boost)
           fi
 
           brew install autoconf automake libtool miniupnpc openssl pkg-config protobuf@21 \
                        qt@5 zeromq qrencode librsvg berkeley-db@5 libevent create-dmg
           brew link protobuf@21
 
+          echo "BOOST_PREFIX=$BOOST_PREFIX" >> $GITHUB_ENV
+          echo "OPENSSL_PREFIX=$(brew --prefix openssl)" >> $GITHUB_ENV
+          echo "QT_PREFIX=$(brew --prefix qt@5)" >> $GITHUB_ENV
+
       - name: Set environment
         run: |
-          BOOST_PREFIX=$(brew --prefix boost || brew --prefix boost@1.83)
-          OPENSSL_PREFIX=$(brew --prefix openssl)
-          QT_PREFIX=$(brew --prefix qt@5)
-
-          echo "BOOST_INCLUDEDIR=$BOOST_PREFIX/include" >> $GITHUB_ENV
-          echo "BOOST_LIBRARYDIR=$BOOST_PREFIX/lib" >> $GITHUB_ENV
-          echo "OPENSSL_ROOT=$OPENSSL_PREFIX" >> $GITHUB_ENV
           echo "CPPFLAGS=-I$BOOST_PREFIX/include -I$OPENSSL_PREFIX/include" >> $GITHUB_ENV
           echo "LDFLAGS=-L$BOOST_PREFIX/lib -L$OPENSSL_PREFIX/lib" >> $GITHUB_ENV
           echo "PKG_CONFIG_PATH=$QT_PREFIX/lib/pkgconfig" >> $GITHUB_ENV
@@ -49,9 +46,11 @@ jobs:
         run: |
           ./configure \
             --with-gui=qt5 \
-            --with-boost=$BOOST_INCLUDEDIR \
-            --with-boost-libdir=$BOOST_LIBRARYDIR \
-            --with-openssl=$OPENSSL_ROOT \
+            --with-boost=$BOOST_PREFIX \
+            --with-boost-libdir=$BOOST_PREFIX/lib \
+            --with-openssl=$OPENSSL_PREFIX \
+            BOOST_CPPFLAGS="-I$BOOST_PREFIX/include" \
+            BOOST_LDFLAGS="-L$BOOST_PREFIX/lib" \
             PKG_CONFIG_PATH=$PKG_CONFIG_PATH \
             CPPFLAGS="$CPPFLAGS" \
             LDFLAGS="$LDFLAGS"
